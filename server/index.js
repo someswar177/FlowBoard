@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/projects", projectRoutes);
-app.use("/api/tasks", taskRoutes);
+app.use("/api", taskRoutes);
 app.use("/api/ai", aiRoutes);
 
 const PORT = process.env.PORT || 5000;

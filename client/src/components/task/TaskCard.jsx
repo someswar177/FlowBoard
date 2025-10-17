@@ -9,7 +9,7 @@ export const TaskCard = ({ task, index, onEdit, onDelete }) => {
   };
 
   return (
-    <Draggable draggableId={task.id.toString()} index={index}>
+    <Draggable draggableId={task._id.toString()} index={index}>
       {(provided, snapshot) => (
         <motion.div
           ref={provided.innerRef}

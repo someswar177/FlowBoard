@@ -13,7 +13,7 @@ export const ProjectCard = ({ project, onEdit, onDelete }) => {
   };
 
   const handleClick = () => {
-    navigate(`/projects/${project.id}`);
+    navigate(`/projects/${project._id}`);
   };
 
   return (
