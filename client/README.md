@@ -1,16 +1,85 @@
-# React + Vite
+# TaskFlow - Project & Task Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, professional project and task management application built with React, Vite, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Project Management**: Create, edit, and delete projects with descriptions
+- **Kanban Board**: Visual task management with drag-and-drop functionality
+- **Task Operations**: Create, edit, delete, and move tasks between columns
+- **AI Assistant**: Context-aware AI helper for task summaries and Q&A
+- **Responsive Design**: Fully responsive UI that works on all devices
+- **Smooth Animations**: Fluid micro-interactions using Framer Motion
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 18** - Modern UI library
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Router** - Client-side routing
+- **@hello-pangea/dnd** - Drag and drop for Kanban board
+- **Framer Motion** - Animation library
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+src/
+├── api/              # API service layer
+├── components/       # React components
+│   ├── ai/          # AI Assistant
+│   ├── common/      # Reusable components
+│   ├── layout/      # Layout components
+│   ├── project/     # Project-related components
+│   └── task/        # Task-related components
+├── context/         # React Context for state management
+├── pages/           # Page components
+└── utils/           # Utility functions
+```
+
+## API Endpoints
+
+The application expects these REST API endpoints:
+
+- `GET /api/projects` - Get all projects
+- `POST /api/projects` - Create project
+- `GET /api/projects/:id` - Get project by ID
+- `PUT /api/projects/:id` - Update project
+- `DELETE /api/projects/:id` - Delete project
+- `GET /api/projects/:id/tasks` - Get project tasks
+- `POST /api/projects/:id/tasks` - Create task
+- `PUT /api/tasks/:id` - Update task
+- `DELETE /api/tasks/:id` - Delete task
+- `POST /api/ai/summarize` - Get AI summary
+- `POST /api/ai/ask` - Ask AI a question
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Environment Variables
+
+Create a `.env` file:
+
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+## Design Principles
+
+- Clean, professional UI inspired by modern PM tools
+- Consistent color palette with blue accents
+- Smooth animations and transitions
+- Intuitive user experience
+- Responsive across all devices

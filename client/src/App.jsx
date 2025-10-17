@@ -1,18 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import { Layout } from './components/layout/Layout';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { KanbanPage } from './pages/KanbanPage';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div class="text-3xl font-bold underline">
-        Hello world!
-      </div>
-    </>
-  )
+    <AppProvider>
+      <BrowserRouter>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<ProjectsPage />} />
+            <Route path="/projects/:projectId" element={<KanbanPage />} />
+          </Routes>
+        </Layout>
+      </BrowserRouter>
+    </AppProvider>
+  );
 }
 
-export default App
+export default App;
