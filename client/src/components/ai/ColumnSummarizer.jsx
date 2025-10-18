@@ -34,7 +34,7 @@ export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="absolute top-12 right-0 w-80 bg-card border border-border rounded-xl shadow-xl p-4 z-40"
+        className="absolute top-12 right-0 w-80 bg-violet-50 border border-border rounded-xl shadow-xl p-4 z-40"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

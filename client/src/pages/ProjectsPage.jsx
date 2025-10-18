@@ -12,12 +12,12 @@ export default function ProjectsPage({ onEditProject }) {
   const [showMenu, setShowMenu] = useState(null);
   const navigate = useNavigate();
 
-  // Data fetching is now done directly in this component.
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const fetchedProjects = await projectService.getAll();
-        setProjects(fetchedProjects); // Update the global context for the sidebar
+        // We fetch a lightweight version of projects for this page.
+        const fetchedProjects = await projectService.getAll(true);
+        setProjects(fetchedProjects);
       } catch (error) {
         showToast(`Failed to load projects: ${error.message}`, 'error');
       } finally {
@@ -44,17 +44,14 @@ export default function ProjectsPage({ onEditProject }) {
     onEditProject(project);
     setShowMenu(null);
   };
-  
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
-  
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
-
   return (
     <div className="h-full overflow-y-auto bg-background">
       <motion.div
@@ -73,7 +70,7 @@ export default function ProjectsPage({ onEditProject }) {
       <div className="p-6">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-             <p className="text-muted-foreground">.</p>
+             <p className="text-muted-foreground">Loading projects...</p>
           </div>
         ) : (
           <motion.div
@@ -115,19 +112,20 @@ export default function ProjectsPage({ onEditProject }) {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50"
+                        // FIX: Replaced 'bg-card' with 'bg-background' to ensure a solid background.
+                        className="absolute top-full right-0 mt-2 w-48 bg-violet-50 border border-border rounded-lg shadow-lg z-50"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <motion.button
                           whileHover={{ x: 4 }}
-                          onClick={() => handleOpenEditModal(project)}
+                          onClick={(e) => { e.stopPropagation(); handleOpenEditModal(project); }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors text-left"
                         >
                           <Edit2 className="w-4 h-4" /> Edit
                         </motion.button>
                         <motion.button
                           whileHover={{ x: 4 }}
-                          onClick={() => handleDeleteProject(project._id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteProject(project._id); }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-destructive/10 text-destructive transition-colors text-left"
                         >
                           <Trash2 className="w-4 h-4" /> Delete
@@ -144,7 +142,8 @@ export default function ProjectsPage({ onEditProject }) {
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="w-4 h-4" />
-                      {`${project.tasks?.length || 0} tasks`}
+                       {/* taskCount is now a property of the project object */}
+                      {`${project.taskCount ?? 0} tasks`}
                     </div>
                   </div>
                 </div>

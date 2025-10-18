@@ -11,15 +11,17 @@ import { projectService } from '../api/projectService';
 import { taskService } from '../api/taskService';
 import { useApp } from '../context/AppContext';
 
-const COLUMN_IDS = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  DONE: 'Done',
+// The hardcoded titles are now just fallbacks. The actual title will come from the project data.
+const COLUMN_CONFIG = {
+  'To Do': { title: 'To Do' },
+  'In Progress': { title: 'In Progress' },
+  'Done': { title: 'Done' },
 };
 
+
 export default function KanbanPage() {
-  const { projectId } = useParams(); // Get project ID from the URL
-  const navigate = useNavigate(); // Hook for navigation
+  const { projectId } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [columns, setColumns] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,12 +38,17 @@ export default function KanbanPage() {
       const fetchedProject = await projectService.getById(projectId, true);
       setProject(fetchedProject);
       const tasks = fetchedProject.tasks || [];
-
-      const initialColumns = {
-        [COLUMN_IDS.TODO]: { id: COLUMN_IDS.TODO, title: 'To Do', tasks: [] },
-        [COLUMN_IDS.IN_PROGRESS]: { id: COLUMN_IDS.IN_PROGRESS, title: 'In Progress', tasks: [] },
-        [COLUMN_IDS.DONE]: { id: COLUMN_IDS.DONE, title: 'Done', tasks: [] },
-      };
+      
+      // Initialize columns from the config
+      const initialColumns = {};
+      Object.keys(COLUMN_CONFIG).forEach(key => {
+        initialColumns[key] = {
+          id: key,
+          // Use the title from project data if it exists, otherwise use the fallback
+          title: fetchedProject.columnNames?.[key] || COLUMN_CONFIG[key].title,
+          tasks: []
+        };
+      });
 
       tasks.forEach((task) => {
         if (initialColumns[task.status]) {
@@ -65,9 +72,39 @@ export default function KanbanPage() {
     fetchProjectData();
   }, [fetchProjectData]);
 
+  // ADDED: Handler to process column renaming
+  const handleRenameColumn = async (columnId, newTitle) => {
+    const oldTitle = columns[columnId].title;
+    // Optimistically update the UI
+    const updatedColumns = {
+      ...columns,
+      [columnId]: { ...columns[columnId], title: newTitle },
+    };
+    setColumns(updatedColumns);
+
+    try {
+      // Update the project on the backend
+      const currentColumnNames = project.columnNames || {
+        'To Do': 'To Do',
+        'In Progress': 'In Progress',
+        'Done': 'Done',
+      };
+      const newColumnNames = { ...currentColumnNames, [columnId]: newTitle };
+      await projectService.update(projectId, { columnNames: newColumnNames });
+      showToast('Column renamed!');
+    } catch (error) {
+      showToast(`Failed to rename column: ${error.message}`, 'error');
+      // Revert on error
+      const revertedColumns = {
+        ...columns,
+        [columnId]: { ...columns[columnId], title: oldTitle },
+      };
+      setColumns(revertedColumns);
+    }
+  };
+
   const handleDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
@@ -91,10 +128,8 @@ export default function KanbanPage() {
     } else {
       const endTasks = Array.from(endCol.tasks);
       endTasks.splice(destination.index, 0, { ...movedTask, status: endCol.id });
-      
       const newStartTasks = startTasks.map((task, index) => ({ ...task, order: index }));
       const newEndTasks = endTasks.map((task, index) => ({ ...task, order: index }));
-
       const newColumns = {
         ...columns,
         [startCol.id]: { ...startCol, tasks: newStartTasks },
@@ -113,7 +148,6 @@ export default function KanbanPage() {
       setColumns(originalColumns);
     }
   };
-  
   const handleSaveTask = async (data) => {
     try {
       if (selectedTask) {
@@ -131,7 +165,6 @@ export default function KanbanPage() {
       setSelectedTask(null);
     }
   };
-  
   const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
@@ -149,7 +182,6 @@ export default function KanbanPage() {
     setSelectedTask(null);
     setShowTaskModal(true);
   };
-  
   const handleOpenEditModal = (task) => {
     setSelectedTask(task);
     setShowTaskModal(true);
@@ -174,7 +206,7 @@ export default function KanbanPage() {
           <motion.button
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/projects')} // Use navigate for the back button
+            onClick={() => navigate('/projects')}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -197,7 +229,7 @@ export default function KanbanPage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleOpenCreateModal(COLUMN_IDS.TODO)}
+            onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])} // Default to the first column
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -211,22 +243,21 @@ export default function KanbanPage() {
           <div className="flex gap-6 min-w-min h-full">
             {columns && Object.values(columns).map((column, index) => (
               <Droppable key={column.id} droppableId={column.id}>
-                {(provided, snapshot) => (
+                {(provided) => (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`flex-shrink-0 w-96 transition-colors h-full ${
-                      snapshot.isDraggingOver ? 'bg-muted/50 rounded-lg' : ''
-                    }`}
+                    className="flex-shrink-0 w-96 transition-colors h-full"
                   >
                     <KanbanColumn
                       column={column}
                       onAddTask={() => handleOpenCreateModal(column.id)}
                       onEditTask={(task) => handleOpenEditModal(task)}
                       onDeleteTask={handleDeleteTask}
+                      onRenameColumn={handleRenameColumn} // Pass the handler down
                     />
                     {provided.placeholder}
                   </motion.div>

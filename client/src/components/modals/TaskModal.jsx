@@ -4,18 +4,15 @@ import { useState, useEffect } from 'react';
 
 export default function TaskModal({ task, onClose, onSave }) {
   const [formData, setFormData] = useState({ title: '', description: '' });
-
   useEffect(() => {
     if (task) {
       setFormData({ title: task.title, description: task.description });
     }
   }, [task]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
   };
-
   return (
     <AnimatePresence>
       <motion.div
@@ -23,14 +20,16 @@ export default function TaskModal({ task, onClose, onSave }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        // FIX: Ensured the z-index is the highest to be on top of everything.
+        className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100]"
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md p-6"
+          // FIX: Replaced 'bg-card' with 'bg-background' to ensure a solid, non-transparent background.
+          className="bg-violet-50 border border-border rounded-xl shadow-xl w-full max-w-md p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">{task ? 'Edit Task' : 'New Task'}</h2>

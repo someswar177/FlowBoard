@@ -1,12 +1,25 @@
 // src/components/kanban/KanbanColumn.jsx
 import { motion } from 'framer-motion';
-import { Plus, MoreVertical, Sparkles, X } from 'lucide-react';
+import { Plus, MoreVertical, Sparkles, X, Edit2 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ColumnSummarizer from '../ai/ColumnSummarizer';
 
-export default function KanbanColumn({ column, onAddTask, onEditTask, onDeleteTask }) {
+export default function KanbanColumn({
+  column,
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
+  onRenameColumn, // ADDED: Prop to handle renaming
+}) {
   const [showSummarizer, setShowSummarizer] = useState(false);
+  // ADDED: State to manage the column options dropdown
+  const [showOptions, setShowOptions] = useState(false);
+  // ADDED: State to manage when the column is in editing mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [newTitle, setNewTitle] = useState(column.title);
+  const inputRef = useRef(null);
+
   const colorMap = {
     'To Do': 'bg-blue-500/10 border-blue-500/20',
     'In Progress': 'bg-amber-500/10 border-amber-500/20',
@@ -17,6 +30,35 @@ export default function KanbanColumn({ column, onAddTask, onEditTask, onDeleteTa
     'In Progress': 'text-amber-600 dark:text-amber-400',
     'Done': 'text-green-600 dark:text-green-400',
   };
+  
+  // ADDED: Focus the input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+  
+  // ADDED: Handler to save the new column title
+  const handleRename = () => {
+    if (newTitle.trim() && newTitle.trim() !== column.title) {
+      onRenameColumn(column.id, newTitle.trim());
+    }
+    setIsEditing(false);
+    setShowOptions(false);
+  };
+  
+  // ADDED: Handler for keyboard events in the input
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleRename();
+    } else if (e.key === 'Escape') {
+      setNewTitle(column.title);
+      setIsEditing(false);
+      setShowOptions(false);
+    }
+  };
+
 
   return (
     <motion.div
@@ -26,8 +68,21 @@ export default function KanbanColumn({ column, onAddTask, onEditTask, onDeleteTa
     >
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-3">
-          <h3 className={`font-semibold ${titleColorMap[column.id] || 'text-foreground'}`}>{column.title}</h3>
-          <div className="flex items-center gap-1">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onBlur={handleRename}
+              onKeyDown={handleKeyDown}
+              className="font-semibold bg-transparent border-b-2 border-primary focus:outline-none w-full"
+            />
+          ) : (
+            <h3 className={`font-semibold ${titleColorMap[column.id] || 'text-foreground'}`}>{column.title}</h3>
+          )}
+
+          <div className="flex items-center gap-1 relative">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -37,9 +92,28 @@ export default function KanbanColumn({ column, onAddTask, onEditTask, onDeleteTa
             >
               <Sparkles className="w-4 h-4" />
             </motion.button>
-            <motion.button whileHover={{ rotate: 90 }} className="p-1 rounded hover:bg-muted/50 transition-colors">
+            {/* ADDED: Logic for the column options menu */}
+            <motion.button
+              whileHover={{ rotate: 90 }}
+              onClick={() => setShowOptions(!showOptions)}
+              className="p-1 rounded hover:bg-muted/50 transition-colors"
+            >
               <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </motion.button>
+            {showOptions && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-full right-0 mt-2 w-32 bg-violet-50 border border-border rounded-lg shadow-lg z-20"
+              >
+                <button
+                  onClick={() => { setIsEditing(true); setShowOptions(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                >
+                  <Edit2 className="w-3 h-3" /> Rename
+                </button>
+              </motion.div>
+            )}
           </div>
         </div>
         <p className="text-xs text-muted-foreground">{column.tasks.length} tasks</p>
@@ -53,7 +127,6 @@ export default function KanbanColumn({ column, onAddTask, onEditTask, onDeleteTa
                 ref={provided.innerRef}
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
-                // The 'layout' prop has been removed from here to fix jerky drag-and-drop
                 whileHover={{ y: -2 }}
                 onClick={() => onEditTask(task)}
                 className={`p-3 rounded-lg bg-card border border-border cursor-grab active:cursor-grabbing transition-all group ${
