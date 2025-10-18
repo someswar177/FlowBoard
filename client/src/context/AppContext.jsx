@@ -1,3 +1,4 @@
+// src/context/AppContext.jsx
 import { createContext, useContext, useState } from 'react';
 
 const AppContext = createContext();
@@ -11,8 +12,7 @@ export const useApp = () => {
 };
 
 export const AppProvider = ({ children }) => {
-  const [currentProject, setCurrentProject] = useState(null);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [projects, setProjects] = useState([]);
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -21,10 +21,8 @@ export const AppProvider = ({ children }) => {
   };
 
   const value = {
-    currentProject,
-    setCurrentProject,
-    isAiLoading,
-    setIsAiLoading,
+    projects,
+    setProjects,
     toast,
     showToast,
   };

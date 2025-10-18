@@ -1,85 +1,162 @@
-# TaskFlow - Project & Task Management System
+# TaskFlow - Project Management System
 
-A modern, professional project and task management application built with React, Vite, and Tailwind CSS.
+A modern, feature-rich project management application built with Vite, React, and Tailwind CSS. This application provides an intuitive Kanban board interface for managing projects and tasks, enhanced with AI-powered features.
 
 ## Features
 
-- **Project Management**: Create, edit, and delete projects with descriptions
-- **Kanban Board**: Visual task management with drag-and-drop functionality
-- **Task Operations**: Create, edit, delete, and move tasks between columns
-- **AI Assistant**: Context-aware AI helper for task summaries and Q&A
-- **Responsive Design**: Fully responsive UI that works on all devices
-- **Smooth Animations**: Fluid micro-interactions using Framer Motion
+- **Project Management**: Create, edit, and organize multiple projects
+- **Kanban Board**: Drag-and-drop task management with customizable columns (To Do, In Progress, Done)
+- **AI Assistant**:
+  - Floating AI panel for Q&A about your projects
+  - Column-level AI summarization for quick insights
+- **Modern UI/UX**: Smooth animations and transitions using Framer Motion
+- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
+- **Clean Architecture**: Well-organized component structure following best practices
 
 ## Tech Stack
 
-- **React 18** - Modern UI library
-- **Vite** - Fast build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Router** - Client-side routing
-- **@hello-pangea/dnd** - Drag and drop for Kanban board
-- **Framer Motion** - Animation library
+- **Frontend Framework**: React 18
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Drag & Drop**: @hello-pangea/dnd
+- **Routing**: React Router DOM v6
+- **Icons**: Lucide React
 
 ## Project Structure
 
 ```
 src/
-├── api/              # API service layer
-├── components/       # React components
-│   ├── ai/          # AI Assistant
-│   ├── common/      # Reusable components
-│   ├── layout/      # Layout components
-│   ├── project/     # Project-related components
-│   └── task/        # Task-related components
-├── context/         # React Context for state management
-├── pages/           # Page components
-└── utils/           # Utility functions
+├── api/               # API client and service functions
+│   └── apiClient.js   # Backend API integration
+├── components/
+│   ├── ai/           # AI-related components
+│   │   ├── AIPanel.jsx
+│   │   └── ColumnSummarizer.jsx
+│   ├── kanban/       # Kanban board components
+│   │   └── KanbanColumn.jsx
+│   ├── layout/       # Layout components
+│   │   └── Sidebar.jsx
+│   └── modals/       # Modal dialogs
+│       ├── ProjectModal.jsx
+│       └── TaskModal.jsx
+├── pages/            # Page components
+│   ├── ProjectsPage.jsx
+│   └── KanbanPage.jsx
+├── utils/            # Utility functions
+│   └── cn.js         # Tailwind merge utility
+├── App.jsx           # Main app component
+└── main.jsx          # Application entry point
 ```
 
-## API Endpoints
+## Getting Started
 
-The application expects these REST API endpoints:
+### Prerequisites
 
-- `GET /api/projects` - Get all projects
-- `POST /api/projects` - Create project
-- `GET /api/projects/:id` - Get project by ID
-- `PUT /api/projects/:id` - Update project
-- `DELETE /api/projects/:id` - Delete project
-- `GET /api/projects/:id/tasks` - Get project tasks
-- `POST /api/projects/:id/tasks` - Create task
-- `PUT /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
-- `POST /api/ai/summarize` - Get AI summary
-- `POST /api/ai/ask` - Ask AI a question
+- Node.js (v16 or higher)
+- npm or yarn
 
-## Development
+### Installation
 
+1. Clone the repository:
 ```bash
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+git clone <repository-url>
+cd taskflow-vite-react
 ```
 
-## Environment Variables
+2. Install dependencies:
+```bash
+npm install
+```
 
-Create a `.env` file:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
+Edit `.env` and configure your backend API URL:
 ```
 VITE_API_URL=http://localhost:3000/api
 ```
 
-## Design Principles
+### Development
 
-- Clean, professional UI inspired by modern PM tools
-- Consistent color palette with blue accents
-- Smooth animations and transitions
-- Intuitive user experience
-- Responsive across all devices
+Start the development server:
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+### Build for Production
+
+Create a production build:
+```bash
+npm run build
+```
+
+Preview the production build:
+```bash
+npm run preview
+```
+
+## Backend Integration
+
+This frontend application requires a backend API with the following endpoints:
+
+### Projects
+- `GET /api/projects` - Get all projects
+- `POST /api/projects` - Create a new project
+
+### Tasks
+- `GET /api/projects/:id/tasks` - Get tasks for a project
+- `POST /api/projects/:id/tasks` - Create a task
+- `PUT /api/tasks/:id` - Update a task
+- `DELETE /api/tasks/:id` - Delete a task
+
+### AI Features
+- `POST /api/ai/ask` - Ask AI assistant a question
+- `POST /api/ai/summarize` - Generate column summary
+
+## Features Overview
+
+### Project Management
+- Create and organize multiple projects
+- View project details including creation date and task count
+- Edit or delete existing projects
+- Navigate between projects seamlessly
+
+### Kanban Board
+- Default columns: To Do, In Progress, Done
+- Drag and drop tasks between columns
+- Create tasks directly in any column
+- Edit or delete tasks inline
+- Visual feedback during drag operations
+
+### AI Integration
+- **AI Assistant Panel**: Ask questions about your projects and get intelligent responses
+- **Column Summarizer**: Get AI-generated summaries of tasks in each column
+- Contextual AI features integrated throughout the interface
+
+### UI/UX Highlights
+- Smooth animations and micro-interactions
+- Responsive design for all screen sizes
+- Dark mode support (via Tailwind CSS)
+- Clean, modern interface
+- Intuitive navigation
+
+## Development Notes
+
+- All components use `.jsx` extension (no TypeScript)
+- Path aliases configured with `@/` pointing to `src/`
+- Tailwind CSS for styling with custom design system
+- Framer Motion for animations
+- Industry-standard folder structure
+
+## License
+
+This project is created for educational and portfolio purposes.
+
+## Contact
+
+For questions or feedback, please reach out to the project maintainer.

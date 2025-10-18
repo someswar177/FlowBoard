@@ -1,17 +1,20 @@
+// src/api/projectService.js
 import apiClient from './apiClient';
 
 export const projectService = {
-  getAll: () => apiClient.get('/projects'),
+  // This is the key optimization.
+  // We're assuming the backend can handle this query parameter to return a much smaller payload.
+  getAll: (populateTaskCount = false) =>
+    apiClient.get(`/projects?populateTaskCount=${populateTaskCount}`),
 
-  getById: (id) => apiClient.get(`/projects/${id}`),
+  getById: (id, populateTasks = false) =>
+    apiClient.get(`/projects/${id}?populateTasks=${populateTasks}`),
 
   create: (data) => apiClient.post('/projects', data),
 
   update: (id, data) => apiClient.put(`/projects/${id}`, data),
 
   delete: (id) => apiClient.delete(`/projects/${id}`),
-
-  getTasks: (projectId) => apiClient.get(`/projects/${projectId}/tasks`),
 
   createTask: (projectId, data) => apiClient.post(`/projects/${projectId}/tasks`, data),
 };

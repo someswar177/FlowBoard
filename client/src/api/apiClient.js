@@ -1,54 +1,26 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// src/api/apiClient.js
+import axios from 'axios';
 
-class ApiClient {
-  async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-    try {
-      const response = await fetch(url, config);
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error(error.message || `HTTP ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
-      throw error;
-    }
+/**
+ * Interceptor to handle API responses.
+ * This is a good place to handle global errors or response transformations.
+ */
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    const message = error.response?.data?.message || error.message;
+    console.error(`API Error: ${message}`);
+    return Promise.reject(new Error(message));
   }
+);
 
-  get(endpoint) {
-    return this.request(endpoint);
-  }
-
-  post(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  put(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  delete(endpoint) {
-    return this.request(endpoint, {
-      method: 'DELETE',
-    });
-  }
-}
-
-export default new ApiClient();
+export default apiClient;

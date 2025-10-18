@@ -1,233 +1,247 @@
-import { useState, useEffect } from 'react';
+// src/pages/KanbanPage.jsx
+import { motion } from 'framer-motion';
+import { Plus, ChevronLeft, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DragDropContext } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable } from '@hello-pangea/dnd';
+import KanbanColumn from '../components/kanban/KanbanColumn';
+import TaskModal from '../components/modals/TaskModal';
+import AIPanel from '../components/ai/AIPanel';
 import { projectService } from '../api/projectService';
 import { taskService } from '../api/taskService';
-import { KanbanColumn } from '../components/task/KanbanColumn';
-import { TaskForm } from '../components/task/TaskForm';
-import { Modal } from '../components/common/Modal';
-import { Loader } from '../components/common/Loader';
-import { EmptyState } from '../components/common/EmptyState';
 import { useApp } from '../context/AppContext';
-import { motion } from 'framer-motion';
 
-const COLUMNS = [
-  { id: 'To Do', title: 'To Do' },
-  { id: 'In Progress', title: 'In Progress' },
-  { id: 'Done', title: 'Done' },
-];
+const COLUMN_IDS = {
+  TODO: 'To Do',
+  IN_PROGRESS: 'In Progress',
+  DONE: 'Done',
+};
 
-export const KanbanPage = () => {
-  const { projectId } = useParams();
-  const navigate = useNavigate();
-  const [tasks, setTasks] = useState([]);
+export default function KanbanPage() {
+  const { projectId } = useParams(); // Get project ID from the URL
+  const navigate = useNavigate(); // Hook for navigation
+  const [project, setProject] = useState(null);
+  const [columns, setColumns] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const { currentProject, setCurrentProject, showToast } = useApp();
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedColumnId, setSelectedColumnId] = useState('');
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const { showToast } = useApp();
 
-  useEffect(() => {
-    fetchProjectAndTasks();
-  }, [projectId]);
-
-  const fetchProjectAndTasks = async () => {
-    setIsLoading(true);
+  const fetchProjectData = useCallback(async () => {
     try {
-      const [project, tasksData] = await Promise.all([
-        projectService.getById(projectId),
-        projectService.getTasks(projectId),
-      ]);
+      if (!projectId) return;
+      setIsLoading(true);
+      const fetchedProject = await projectService.getById(projectId, true);
+      setProject(fetchedProject);
+      const tasks = fetchedProject.tasks || [];
 
-      setCurrentProject(project);
-      setTasks(tasksData);
+      const initialColumns = {
+        [COLUMN_IDS.TODO]: { id: COLUMN_IDS.TODO, title: 'To Do', tasks: [] },
+        [COLUMN_IDS.IN_PROGRESS]: { id: COLUMN_IDS.IN_PROGRESS, title: 'In Progress', tasks: [] },
+        [COLUMN_IDS.DONE]: { id: COLUMN_IDS.DONE, title: 'Done', tasks: [] },
+      };
+
+      tasks.forEach((task) => {
+        if (initialColumns[task.status]) {
+          initialColumns[task.status].tasks.push(task);
+        }
+      });
+
+      Object.values(initialColumns).forEach((col) => {
+        col.tasks.sort((a, b) => a.order - b.order);
+      });
+
+      setColumns(initialColumns);
     } catch (error) {
-      showToast('Failed to load project', 'error');
-      navigate('/');
+      showToast(`Failed to load project: ${error.message}`, 'error');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId, showToast]);
 
-  const handleCreateTask = () => {
-    setEditingTask(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditTask = (task) => {
-    setEditingTask(task);
-    setIsModalOpen(true);
-  };
-
-  const handleSubmitTask = async (formData) => {
-    try {
-      if (editingTask) {
-        await taskService.update(editingTask.id, formData);
-        showToast('Task updated successfully');
-        setTasks(tasks.map((t) => (t.id === editingTask.id ? { ...t, ...formData } : t)));
-      } else {
-        const newTask = await projectService.createTask(projectId, formData);
-        showToast('Task created successfully');
-        setTasks([...tasks, newTask]);
-      }
-      setIsModalOpen(false);
-    } catch (error) {
-      showToast(`Failed to ${editingTask ? 'update' : 'create'} task`, 'error');
-    }
-  };
-
-  const handleDeleteTask = async (task) => {
-    if (!window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
-      return;
-    }
-
-    try {
-      await taskService.delete(task.id);
-      showToast('Task deleted successfully');
-      setTasks(tasks.filter((t) => t.id !== task.id));
-    } catch (error) {
-      showToast('Failed to delete task', 'error');
-    }
-  };
+  useEffect(() => {
+    fetchProjectData();
+  }, [fetchProjectData]);
 
   const handleDragEnd = async (result) => {
-    const { destination, source, draggableId } = result;
+    const { source, destination, draggableId } = result;
 
     if (!destination) return;
-
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
 
-    const taskId = parseInt(draggableId);
-    const newStatus = destination.droppableId;
+    const startCol = columns[source.droppableId];
+    const endCol = columns[destination.droppableId];
+    const originalColumns = JSON.parse(JSON.stringify(columns));
 
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, status: newStatus } : task
-    );
+    const startTasks = Array.from(startCol.tasks);
+    const [movedTask] = startTasks.splice(source.index, 1);
+    
+    if (startCol === endCol) {
+      startTasks.splice(destination.index, 0, movedTask);
+      const reorderedTasks = startTasks.map((task, index) => ({ ...task, order: index }));
+      const newColumns = {
+        ...columns,
+        [startCol.id]: { ...startCol, tasks: reorderedTasks },
+      };
+      setColumns(newColumns);
+    } else {
+      const endTasks = Array.from(endCol.tasks);
+      endTasks.splice(destination.index, 0, { ...movedTask, status: endCol.id });
+      
+      const newStartTasks = startTasks.map((task, index) => ({ ...task, order: index }));
+      const newEndTasks = endTasks.map((task, index) => ({ ...task, order: index }));
 
-    setTasks(updatedTasks);
+      const newColumns = {
+        ...columns,
+        [startCol.id]: { ...startCol, tasks: newStartTasks },
+        [endCol.id]: { ...endCol, tasks: newEndTasks },
+      };
+      setColumns(newColumns);
+    }
 
     try {
-      await taskService.update(taskId, { status: newStatus });
-      showToast('Task moved successfully');
+      await taskService.update(draggableId, {
+        status: destination.droppableId,
+        order: destination.index,
+      });
     } catch (error) {
-      setTasks(tasks);
-      showToast('Failed to move task', 'error');
+      showToast(`Failed to move task: ${error.message}`, 'error');
+      setColumns(originalColumns);
+    }
+  };
+  
+  const handleSaveTask = async (data) => {
+    try {
+      if (selectedTask) {
+        await taskService.update(selectedTask._id, data);
+        showToast('Task updated!');
+      } else {
+        await projectService.createTask(projectId, { ...data, status: selectedColumnId });
+        showToast('Task created!');
+      }
+      fetchProjectData();
+    } catch (error) {
+      showToast(`Failed to save task: ${error.message}`, 'error');
+    } finally {
+      setShowTaskModal(false);
+      setSelectedTask(null);
+    }
+  };
+  
+  const handleDeleteTask = async (taskId) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await taskService.delete(taskId);
+        showToast('Task deleted!');
+        fetchProjectData();
+      } catch (error) {
+        showToast(`Failed to delete task: ${error.message}`, 'error');
+      }
     }
   };
 
-  const getTasksByStatus = (status) => {
-    return tasks.filter((task) => task.status === status);
+  const handleOpenCreateModal = (columnId) => {
+    setSelectedColumnId(columnId);
+    setSelectedTask(null);
+    setShowTaskModal(true);
+  };
+  
+  const handleOpenEditModal = (task) => {
+    setSelectedTask(task);
+    setShowTaskModal(true);
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-        <Loader size="lg" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-full text-muted-foreground">Loading Project Board...</div>;
+  }
+  
+  if (!project) {
+     return <div className="flex items-center justify-center h-full text-destructive">Could not load project. Please go back and try again.</div>;
   }
 
   return (
-    <div className="min-h-[calc(100vh-80px)]">
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-          >
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <button
-                  onClick={() => navigate('/')}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {currentProject?.name || 'Project Board'}
-                </h1>
-              </div>
-              {currentProject?.description && (
-                <p className="text-gray-600 ml-8">{currentProject.description}</p>
-              )}
-            </div>
-            <button onClick={handleCreateTask} className="btn-primary flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              <span>New Task</span>
-            </button>
-          </motion.div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {tasks.length === 0 ? (
-          <EmptyState
-            icon={
-              <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-            }
-            title="No tasks yet"
-            description="Create your first task to get started with this project"
-            action={
-              <button onClick={handleCreateTask} className="btn-primary">
-                Create Task
-              </button>
-            }
-          />
-        ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-6 overflow-x-auto pb-4">
-              {COLUMNS.map((column) => (
-                <KanbanColumn
-                  key={column.id}
-                  column={column}
-                  tasks={getTasksByStatus(column.id)}
-                  onEditTask={handleEditTask}
-                  onDeleteTask={handleDeleteTask}
-                />
-              ))}
-            </div>
-          </DragDropContext>
-        )}
-      </div>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingTask ? 'Edit Task' : 'Create New Task'}
+    <div className="h-full flex flex-col bg-background">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between p-6 border-b border-border"
       >
-        <TaskForm
-          task={editingTask}
-          onSubmit={handleSubmitTask}
-          onCancel={() => setIsModalOpen(false)}
-        />
-      </Modal>
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ x: -4 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/projects')} // Use navigate for the back button
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </motion.button>
+          <div>
+            <h1 className="text-2xl font-bold">{project.name}</h1>
+            <p className="text-sm text-muted-foreground">Manage tasks and track progress</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAIPanel(!showAIPanel)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI Assistant
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleOpenCreateModal(COLUMN_IDS.TODO)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Task
+          </motion.button>
+        </div>
+      </motion.div>
+
+      <div className="flex-1 overflow-x-auto p-6">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="flex gap-6 min-w-min h-full">
+            {columns && Object.values(columns).map((column, index) => (
+              <Droppable key={column.id} droppableId={column.id}>
+                {(provided, snapshot) => (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`flex-shrink-0 w-96 transition-colors h-full ${
+                      snapshot.isDraggingOver ? 'bg-muted/50 rounded-lg' : ''
+                    }`}
+                  >
+                    <KanbanColumn
+                      column={column}
+                      onAddTask={() => handleOpenCreateModal(column.id)}
+                      onEditTask={(task) => handleOpenEditModal(task)}
+                      onDeleteTask={handleDeleteTask}
+                    />
+                    {provided.placeholder}
+                  </motion.div>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
+      </div>
+
+      {showTaskModal && (
+        <TaskModal task={selectedTask} onClose={() => setShowTaskModal(false)} onSave={handleSaveTask} />
+      )}
+      
+      {showAIPanel && <AIPanel projectContext={project} onClose={() => setShowAIPanel(false)} />}
     </div>
   );
-};
+}
