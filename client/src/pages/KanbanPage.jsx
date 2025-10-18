@@ -11,13 +11,11 @@ import { projectService } from '../api/projectService';
 import { taskService } from '../api/taskService';
 import { useApp } from '../context/AppContext';
 
-// The hardcoded titles are now just fallbacks. The actual title will come from the project data.
 const COLUMN_CONFIG = {
   'To Do': { title: 'To Do' },
   'In Progress': { title: 'In Progress' },
   'Done': { title: 'Done' },
 };
-
 
 export default function KanbanPage() {
   const { projectId } = useParams();
@@ -39,12 +37,10 @@ export default function KanbanPage() {
       setProject(fetchedProject);
       const tasks = fetchedProject.tasks || [];
       
-      // Initialize columns from the config
       const initialColumns = {};
       Object.keys(COLUMN_CONFIG).forEach(key => {
         initialColumns[key] = {
           id: key,
-          // Use the title from project data if it exists, otherwise use the fallback
           title: fetchedProject.columnNames?.[key] || COLUMN_CONFIG[key].title,
           tasks: []
         };
@@ -72,10 +68,8 @@ export default function KanbanPage() {
     fetchProjectData();
   }, [fetchProjectData]);
 
-  // ADDED: Handler to process column renaming
   const handleRenameColumn = async (columnId, newTitle) => {
     const oldTitle = columns[columnId].title;
-    // Optimistically update the UI
     const updatedColumns = {
       ...columns,
       [columnId]: { ...columns[columnId], title: newTitle },
@@ -83,7 +77,6 @@ export default function KanbanPage() {
     setColumns(updatedColumns);
 
     try {
-      // Update the project on the backend
       const currentColumnNames = project.columnNames || {
         'To Do': 'To Do',
         'In Progress': 'In Progress',
@@ -94,7 +87,6 @@ export default function KanbanPage() {
       showToast('Column renamed!');
     } catch (error) {
       showToast(`Failed to rename column: ${error.message}`, 'error');
-      // Revert on error
       const revertedColumns = {
         ...columns,
         [columnId]: { ...columns[columnId], title: oldTitle },
@@ -148,6 +140,7 @@ export default function KanbanPage() {
       setColumns(originalColumns);
     }
   };
+
   const handleSaveTask = async (data) => {
     try {
       if (selectedTask) {
@@ -165,6 +158,7 @@ export default function KanbanPage() {
       setSelectedTask(null);
     }
   };
+
   const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
@@ -182,6 +176,7 @@ export default function KanbanPage() {
     setSelectedTask(null);
     setShowTaskModal(true);
   };
+
   const handleOpenEditModal = (task) => {
     setSelectedTask(task);
     setShowTaskModal(true);
@@ -229,7 +224,7 @@ export default function KanbanPage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])} // Default to the first column
+            onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -241,26 +236,26 @@ export default function KanbanPage() {
       <div className="flex-1 overflow-x-auto p-6">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex gap-6 min-w-min h-full">
-            {columns && Object.values(columns).map((column, index) => (
+            {columns && Object.values(columns).map((column) => (
               <Droppable key={column.id} droppableId={column.id}>
                 {(provided) => (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                  // FIX: Removed the motion.div wrapper from here. The animation was
+                  // applying a CSS 'transform' that interfered with the DnD library's
+                  // position calculations, causing the dragged item to get "stuck".
+                  <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="flex-shrink-0 w-96 transition-colors h-full"
+                    className="flex-shrink-0 w-96 h-full"
                   >
                     <KanbanColumn
                       column={column}
                       onAddTask={() => handleOpenCreateModal(column.id)}
                       onEditTask={(task) => handleOpenEditModal(task)}
                       onDeleteTask={handleDeleteTask}
-                      onRenameColumn={handleRenameColumn} // Pass the handler down
+                      onRenameColumn={handleRenameColumn}
                     />
                     {provided.placeholder}
-                  </motion.div>
+                  </div>
                 )}
               </Droppable>
             ))}

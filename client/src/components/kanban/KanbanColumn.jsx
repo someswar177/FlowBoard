@@ -10,12 +10,10 @@ export default function KanbanColumn({
   onAddTask,
   onEditTask,
   onDeleteTask,
-  onRenameColumn, // ADDED: Prop to handle renaming
+  onRenameColumn,
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
-  // ADDED: State to manage the column options dropdown
   const [showOptions, setShowOptions] = useState(false);
-  // ADDED: State to manage when the column is in editing mode
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(column.title);
   const inputRef = useRef(null);
@@ -30,16 +28,14 @@ export default function KanbanColumn({
     'In Progress': 'text-amber-600 dark:text-amber-400',
     'Done': 'text-green-600 dark:text-green-400',
   };
-  
-  // ADDED: Focus the input when editing starts
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [isEditing]);
-  
-  // ADDED: Handler to save the new column title
+
   const handleRename = () => {
     if (newTitle.trim() && newTitle.trim() !== column.title) {
       onRenameColumn(column.id, newTitle.trim());
@@ -47,8 +43,7 @@ export default function KanbanColumn({
     setIsEditing(false);
     setShowOptions(false);
   };
-  
-  // ADDED: Handler for keyboard events in the input
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleRename();
@@ -58,7 +53,6 @@ export default function KanbanColumn({
       setShowOptions(false);
     }
   };
-
 
   return (
     <motion.div
@@ -92,7 +86,6 @@ export default function KanbanColumn({
             >
               <Sparkles className="w-4 h-4" />
             </motion.button>
-            {/* ADDED: Logic for the column options menu */}
             <motion.button
               whileHover={{ rotate: 90 }}
               onClick={() => setShowOptions(!showOptions)}
@@ -119,17 +112,18 @@ export default function KanbanColumn({
         <p className="text-xs text-muted-foreground">{column.tasks.length} tasks</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* FIX: Added 'min-h-10' to ensure the droppable area has a minimum height,
+          preventing the "jump" effect when dropping a card into an empty column. */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-10">
         {column.tasks.map((task, index) => (
           <Draggable key={task._id} draggableId={task._id} index={index}>
             {(provided, snapshot) => (
-              <motion.div
+              <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
-                whileHover={{ y: -2 }}
                 onClick={() => onEditTask(task)}
-                className={`p-3 rounded-lg bg-card border border-border cursor-grab active:cursor-grabbing transition-all group ${
+                className={`p-3 rounded-lg bg-card border border-border cursor-grab active:cursor-grabbing group ${
                   snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : ''
                 }`}
               >
@@ -151,7 +145,7 @@ export default function KanbanColumn({
                     <X className="w-3 h-3" />
                   </motion.button>
                 </div>
-              </motion.div>
+              </div>
             )}
           </Draggable>
         ))}
