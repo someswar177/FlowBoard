@@ -20,49 +20,47 @@ export default function TaskModal({ task, onClose, onSave }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        // FIX: Ensured the z-index is the highest to be on top of everything.
-        className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100]"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100]"
       >
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          // FIX: Replaced 'bg-card' with 'bg-background' to ensure a solid, non-transparent background.
-          className="bg-violet-50 border border-border rounded-xl shadow-xl w-full max-w-md p-6"
+          className="bg-white rounded-2xl shadow-strong w-full max-w-md p-6 border border-slate-200"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">{task ? 'Edit Task' : 'New Task'}</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{task ? 'Edit Task' : 'New Task'}</h2>
             <motion.button
-              whileHover={{ rotate: 90 }}
+              whileHover={{ rotate: 90, scale: 1.1 }}
               onClick={onClose}
-              className="p-1 hover:bg-muted rounded transition-colors"
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-slate-500" />
             </motion.button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2">Task Title</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Task Title</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Enter task title"
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Enter task description"
                 rows={3}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all text-slate-900"
               />
             </div>
 
@@ -72,7 +70,7 @@ export default function TaskModal({ task, onClose, onSave }) {
                 whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl hover:bg-slate-50 transition-all font-medium text-slate-700"
               >
                 Cancel
               </motion.button>
@@ -80,7 +78,7 @@ export default function TaskModal({ task, onClose, onSave }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
               >
                 {task ? 'Update' : 'Create'}
               </motion.button>

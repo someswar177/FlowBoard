@@ -1,16 +1,19 @@
-// src/components/kanban/KanbanColumn.jsx
 import { motion } from 'framer-motion';
-import { Plus, MoreVertical, Sparkles, X, Edit2 } from 'lucide-react';
+import { Plus, MoreVertical, Sparkles, X, Edit2, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useState, useRef, useEffect } from 'react';
 import ColumnSummarizer from '../ai/ColumnSummarizer';
 
 export default function KanbanColumn({
   column,
+  isDraggingOver,
+  isDragging,
   onAddTask,
   onEditTask,
   onDeleteTask,
   onRenameColumn,
+  droppableProvided,    // new prop
+  droppableSnapshot,    // optional
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -19,15 +22,30 @@ export default function KanbanColumn({
   const inputRef = useRef(null);
 
   const colorMap = {
-    'To Do': 'bg-blue-500/10 border-blue-500/20',
-    'In Progress': 'bg-amber-500/10 border-amber-500/20',
-    'Done': 'bg-green-500/10 border-green-500/20',
+    'To Do': 'bg-blue-50/80 border-blue-200',
+    'In Progress': 'bg-amber-50/80 border-amber-200',
+    'Done': 'bg-emerald-50/80 border-emerald-200',
   };
-  const titleColorMap = {
-    'To Do': 'text-blue-600 dark:text-blue-400',
-    'In Progress': 'text-amber-600 dark:text-amber-400',
-    'Done': 'text-green-600 dark:text-green-400',
+
+  const badgeColorMap = {
+    'To Do': 'bg-blue-100 text-blue-700',
+    'In Progress': 'bg-amber-100 text-amber-700',
+    'Done': 'bg-emerald-100 text-emerald-700',
   };
+
+  const headerBadgeColorMap = {
+    'To Do': 'bg-blue-600',
+    'In Progress': 'bg-amber-600',
+    'Done': 'bg-emerald-600',
+  };
+
+  const statusIconMap = {
+    'To Do': CircleDashed,
+    'In Progress': CircleDot,
+    'Done': CheckCircle2,
+  };
+
+  const IconComponent = statusIconMap[column.id];
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -58,9 +76,9 @@ export default function KanbanColumn({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex flex-col h-full rounded-xl border ${colorMap[column.id] || 'bg-muted/50 border-border'} relative`}
+      className={`flex flex-col max-h-full rounded-2xl border-2 ${colorMap[column.id] || 'bg-slate-50/80 border-slate-200'} relative shadow-sm w-86`}
     >
-      <div className="p-4 border-b border-border/50">
+      <div className="p-4 border-b border-slate-200/60">
         <div className="flex items-center justify-between mb-3">
           {isEditing ? (
             <input
@@ -70,10 +88,13 @@ export default function KanbanColumn({
               onChange={(e) => setNewTitle(e.target.value)}
               onBlur={handleRename}
               onKeyDown={handleKeyDown}
-              className="font-semibold bg-transparent border-b-2 border-primary focus:outline-none w-full"
+              className="font-bold text-lg bg-transparent border-b-2 border-blue-600 focus:outline-none w-full text-slate-900"
             />
           ) : (
-            <h3 className={`font-semibold ${titleColorMap[column.id] || 'text-foreground'}`}>{column.title}</h3>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-white font-semibold text-sm ${headerBadgeColorMap[column.id] || 'bg-slate-500'}`}>
+              {IconComponent && <IconComponent className="w-4 h-4" strokeWidth={3.2} />}
+              <span>{column.title.toUpperCase()}</span>
+            </div>
           )}
 
           <div className="flex items-center gap-1 relative">
@@ -81,7 +102,7 @@ export default function KanbanColumn({
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowSummarizer(!showSummarizer)}
-              className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+              className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
               title="Summarize with AI"
             >
               <Sparkles className="w-4 h-4" />
@@ -89,32 +110,43 @@ export default function KanbanColumn({
             <motion.button
               whileHover={{ rotate: 90 }}
               onClick={() => setShowOptions(!showOptions)}
-              className="p-1 rounded hover:bg-muted/50 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600"
             >
-              <MoreVertical className="w-4 h-4 text-muted-foreground" />
+              <MoreVertical className="w-4 h-4" />
             </motion.button>
             {showOptions && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full right-0 mt-2 w-32 bg-violet-50 border border-border rounded-lg shadow-lg z-20"
+                className="absolute top-full right-0 mt-2 w-32 bg-white border border-slate-200 rounded-xl shadow-medium z-20 overflow-hidden"
               >
                 <button
                   onClick={() => { setIsEditing(true); setShowOptions(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 text-slate-700 transition-colors"
                 >
-                  <Edit2 className="w-3 h-3" /> Rename
+                  <Edit2 className="w-3.5 h-3.5" /> Rename
                 </button>
               </motion.div>
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">{column.tasks.length} tasks</p>
+
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColorMap[column.id] || 'bg-slate-100 text-slate-700'}`}>
+          {column.tasks.length} {column.tasks.length === 1 ? 'task' : 'tasks'}
+        </span>
       </div>
 
-      {/* FIX: Added 'min-h-10' to ensure the droppable area has a minimum height,
-          preventing the "jump" effect when dropping a card into an empty column. */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-10">
+      {/* TASKS CONTAINER: attach droppableProvided here so placeholder lives in tasks area */}
+      <div
+        ref={droppableProvided ? droppableProvided.innerRef : null}
+        {...(droppableProvided ? droppableProvided.droppableProps : {})}
+        className={`p-3 space-y-2.5 transition-[height] duration-200 ease-in-out ${
+  column.tasks.length > 3 ? 'overflow-y-auto' : 'overflow-visible'
+} ${
+  isDraggingOver && column.tasks.length > 3 ? 'pb-24' : ''
+} ${isDragging && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''}`}
+
+      >
         {column.tasks.map((task, index) => (
           <Draggable key={task._id} draggableId={task._id} index={index}>
             {(provided, snapshot) => (
@@ -123,16 +155,15 @@ export default function KanbanColumn({
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
                 onClick={() => onEditTask(task)}
-                className={`p-3 rounded-lg bg-card border border-border cursor-grab active:cursor-grabbing group ${
-                  snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : ''
-                }`}
+                className={`p-4 rounded-xl bg-white border border-slate-200 cursor-grab active-cursor-grabbing group hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-strong ring-2 ring-blue-500 scale-105' : ''
+                  }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors">
+                    <h4 className="font-semibold text-sm mb-1.5 text-slate-900 group-hover:text-blue-600 transition-colors">
                       {task.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{task.description}</p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -140,26 +171,29 @@ export default function KanbanColumn({
                       e.stopPropagation();
                       onDeleteTask(task._id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all rounded-lg hover:bg-red-50"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-4 h-4" />
                   </motion.button>
                 </div>
               </div>
             )}
           </Draggable>
         ))}
+
+        {/* important: placeholder must be inside the tasks container */}
+        {droppableProvided && droppableProvided.placeholder}
       </div>
 
-      <div className="p-3 border-t border-border/50">
+      <div className="p-3 border-t border-slate-200/60">
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
           onClick={onAddTask}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border/50 text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
         >
           <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">Add Task</span>
+          <span className="text-sm font-semibold">Add Task</span>
         </motion.button>
       </div>
 

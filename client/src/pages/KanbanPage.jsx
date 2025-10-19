@@ -1,4 +1,3 @@
-// src/pages/KanbanPage.jsx
 import { motion } from 'framer-motion';
 import { Plus, ChevronLeft, Sparkles } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
@@ -27,6 +26,7 @@ export default function KanbanPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedColumnId, setSelectedColumnId] = useState('');
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // State to track drag status
   const { showToast } = useApp();
 
   const fetchProjectData = useCallback(async () => {
@@ -36,7 +36,7 @@ export default function KanbanPage() {
       const fetchedProject = await projectService.getById(projectId, true);
       setProject(fetchedProject);
       const tasks = fetchedProject.tasks || [];
-      
+
       const initialColumns = {};
       Object.keys(COLUMN_CONFIG).forEach(key => {
         initialColumns[key] = {
@@ -108,7 +108,7 @@ export default function KanbanPage() {
 
     const startTasks = Array.from(startCol.tasks);
     const [movedTask] = startTasks.splice(source.index, 1);
-    
+
     if (startCol === endCol) {
       startTasks.splice(destination.index, 0, movedTask);
       const reorderedTasks = startTasks.map((task, index) => ({ ...task, order: index }));
@@ -183,49 +183,49 @@ export default function KanbanPage() {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-full text-muted-foreground">Loading Project Board...</div>;
+    return <div className="flex items-center justify-center h-full text-slate-500">Loading Project Board...</div>;
   }
-  
+
   if (!project) {
-     return <div className="flex items-center justify-center h-full text-destructive">Could not load project. Please go back and try again.</div>;
+     return <div className="flex items-center justify-center h-full text-red-600">Could not load project. Please go back and try again.</div>;
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-slate-50">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-6 border-b border-border"
+        className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shadow-sm"
       >
         <div className="flex items-center gap-4">
           <motion.button
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/projects')}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
           </motion.button>
           <div>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">Manage tasks and track progress</p>
+            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+            <p className="text-sm text-slate-500">Manage tasks and track progress</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setShowAIPanel(!showAIPanel)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-md transition-all"
           >
             <Sparkles className="w-4 h-4" />
             AI Assistant
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hover:shadow-md transition-all"
           >
             <Plus className="w-4 h-4" />
             New Task
@@ -234,28 +234,29 @@ export default function KanbanPage() {
       </motion.div>
 
       <div className="flex-1 overflow-x-auto p-6">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-6 min-w-min h-full">
+        <DragDropContext
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(result) => {
+            setIsDragging(false);
+            handleDragEnd(result);
+          }}
+        >
+          <div className="flex items-start gap-6 min-w-min h-full">
             {columns && Object.values(columns).map((column) => (
               <Droppable key={column.id} droppableId={column.id}>
-                {(provided) => (
-                  // FIX: Removed the motion.div wrapper from here. The animation was
-                  // applying a CSS 'transform' that interfered with the DnD library's
-                  // position calculations, causing the dragged item to get "stuck".
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="flex-shrink-0 w-96 h-full"
-                  >
-                    <KanbanColumn
-                      column={column}
-                      onAddTask={() => handleOpenCreateModal(column.id)}
-                      onEditTask={(task) => handleOpenEditModal(task)}
-                      onDeleteTask={handleDeleteTask}
-                      onRenameColumn={handleRenameColumn}
-                    />
-                    {provided.placeholder}
-                  </div>
+                {(provided, snapshot) => (
+                  // Pass provided and snapshot into KanbanColumn so the placeholder can be rendered
+                  <KanbanColumn
+                    column={column}
+                    isDraggingOver={snapshot.isDraggingOver}
+                    isDragging={isDragging}
+                    onAddTask={() => handleOpenCreateModal(column.id)}
+                    onEditTask={(task) => handleOpenEditModal(task)}
+                    onDeleteTask={handleDeleteTask}
+                    onRenameColumn={handleRenameColumn}
+                    droppableProvided={provided}
+                    droppableSnapshot={snapshot}
+                  />
                 )}
               </Droppable>
             ))}
@@ -266,7 +267,7 @@ export default function KanbanPage() {
       {showTaskModal && (
         <TaskModal task={selectedTask} onClose={() => setShowTaskModal(false)} onSave={handleSaveTask} />
       )}
-      
+
       {showAIPanel && <AIPanel projectContext={project} onClose={() => setShowAIPanel(false)} />}
     </div>
   );

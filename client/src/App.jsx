@@ -43,7 +43,7 @@ function AppContent() {
 
   return (
     <>
-      <div className="flex h-screen bg-background text-foreground">
+      <div className="flex h-screen bg-gray-100 text-foreground">
         <Sidebar onNewProject={() => handleOpenProjectModal()} />
         <main className="flex-1 overflow-hidden">
           <Routes>

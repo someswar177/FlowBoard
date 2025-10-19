@@ -4,7 +4,28 @@ import Task from "../models/taskModel.js";
 // GET /api/projects
 export const getProjects = async (req, res) => {
   try {
+    const { populateTaskCount } = req.query;
+
     const projects = await Project.find().sort({ createdAt: -1 }).lean();
+
+    if (populateTaskCount === "true") {
+      const counts = await Task.aggregate([
+        { $group: { _id: "$projectId", taskCount: { $sum: 1 } } }
+      ]);
+
+      const countMap = counts.reduce((acc, cur) => {
+        acc[cur._id.toString()] = cur.taskCount;
+        return acc;
+      }, {});
+
+      const projectsWithCounts = projects.map(project => ({
+        ...project,
+        taskCount: countMap[project._id.toString()] || 0
+      }));
+
+      return res.json(projectsWithCounts);
+    }
+
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -68,13 +89,19 @@ export const updateProject = async (req, res) => {
 export const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
+
     const project = await Project.findById(id);
     if (!project) return res.status(404).json({ message: "Project not found" });
 
+    // Delete related tasks
     await Task.deleteMany({ projectId: id });
-    await project.remove();
+
+    // Delete the project itself
+    await Project.findByIdAndDelete(id);
+
     res.json({ message: "Project and related tasks deleted" });
   } catch (error) {
+    console.error("Error deleting project:", error);
     res.status(500).json({ message: error.message });
   }
 };
