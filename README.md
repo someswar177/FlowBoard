@@ -9,7 +9,7 @@ FlowBoard is a modern, full-stack project and task management system built with 
 
 **Live Demo:** **[https://flow-board-ivory.vercel.app/](https://flow-board-ivory.vercel.app/)**
 
-![FlowBoard Kanban Page Screenshot](https://i.imgur.com/your-screenshot-url.png) ---
+<!-- ![FlowBoard Kanban Page Screenshot](https://i.imgur.com/your-screenshot-url.png) --- -->
 
 ## ✨ Core Features
 
