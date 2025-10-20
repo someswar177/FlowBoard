@@ -18,14 +18,13 @@ const projectSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // automatically adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { 
  virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
-// Virtual to populate tasks
 projectSchema.virtual("tasks", {
   ref: "Task",
   localField: "_id",

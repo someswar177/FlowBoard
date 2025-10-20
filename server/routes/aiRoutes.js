@@ -1,4 +1,3 @@
-// routes/aiRoutes.js
 import express from "express";
 import { summarizeProject, askAI } from "../controllers/aiController.js";
 

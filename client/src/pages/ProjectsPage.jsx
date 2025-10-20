@@ -24,7 +24,7 @@ export default function ProjectsPage({
 }) {
   const { projects, setProjects, showToast } = useApp();
   const [showMenu, setShowMenu] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // 👈 new
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const navigate = useNavigate();
   const menuRef = useRef(null);
 
@@ -64,7 +64,6 @@ export default function ProjectsPage({
 
   return (
     <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50/30">
-      {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -100,7 +99,6 @@ export default function ProjectsPage({
         </div>
       </motion.div>
 
-      {/* MAIN CONTENT */}
       <div className="p-4 sm:p-6">
         {!isLoading && (
           <div>
@@ -169,7 +167,7 @@ export default function ProjectsPage({
                                   whileHover={{ x: 4 }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setDeleteConfirm(project); // 👈 show custom confirm modal
+                                    setDeleteConfirm(project);
                                   }}
                                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-red-50 text-red-600 transition-colors text-left"
                                 >
@@ -213,7 +211,6 @@ export default function ProjectsPage({
         )}
       </div>
 
-      {/* 🧩 Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div

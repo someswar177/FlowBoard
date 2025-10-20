@@ -1,4 +1,3 @@
-// src/components/ui/Toast.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -7,19 +6,12 @@ export default function Toast({ message, type = 'success', onClose = () => {} })
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Step 1: after timeout, start exit animation
     const hideTimer = setTimeout(() => {
       setIsVisible(false);
     }, 2700);
 
     return () => clearTimeout(hideTimer);
   }, []);
-
-  // Step 2: when the exit animation completes, call onClose to clear toast from context
-  const handleAnimationComplete = (definition) => {
-    // Framer Motion calls this when animation finishes - we want to detect exit completion
-    // We'll not rely on this here; instead use onAnimationComplete on exit is tricky.
-  };
 
   const icons = {
     success: <CheckCircle2 className="w-5 h-5" />,
@@ -40,11 +32,7 @@ export default function Toast({ message, type = 'success', onClose = () => {} })
           exit={{ opacity: 0, y: -50, x: '-50%' }}
           transition={{ duration: 0.28 }}
           onAnimationComplete={(definition) => {
-            // If animation finished and we are not visible, call onClose.
-            // Note: This callback fires for both enter and exit. So only call onClose
-            // if we are not visible anymore (i.e., the component has been told to exit)
             if (!isVisible) {
-              // small timeout to ensure DOM updated before we clear context
               setTimeout(() => onClose(), 40);
             }
           }}
@@ -56,7 +44,6 @@ export default function Toast({ message, type = 'success', onClose = () => {} })
           <button
             onClick={() => {
               setIsVisible(false);
-              // schedule onClose slightly later (exit animation)
               setTimeout(() => onClose(), 300);
             }}
             className="flex-shrink-0 ml-2 hover:opacity-70 transition-opacity"

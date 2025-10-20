@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Sparkles } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../../api/aiService';
-import { marked } from 'marked'; // <-- 1. Import the marked library
+import { marked } from 'marked';
 
 export default function AIPanel({ projectContext, onClose }) {
   const [messages, setMessages] = useState([
@@ -95,18 +95,14 @@ export default function AIPanel({ projectContext, onClose }) {
                     : 'bg-white text-slate-900 border border-slate-200'
                 }`}
               >
-                {/* --- FIX START --- */}
                 {message.type === 'user' ? (
-                  // 2. Render user messages normally as plain text
                   <p className="text-sm leading-relaxed">{message.content}</p>
                 ) : (
-                  // 3. For AI messages, parse Markdown and render as HTML for proper formatting
                   <div
                     className="text-sm leading-relaxed prose prose-sm"
                     dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }}
                   />
                 )}
-                {/* --- FIX END --- */}
               </div>
             </motion.div>
           ))}

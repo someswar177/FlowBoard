@@ -14,7 +14,6 @@ export const AppProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [toast, setToast] = useState(null);
 
-  // stable function to show toast
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);

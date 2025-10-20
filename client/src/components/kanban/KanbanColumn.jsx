@@ -49,7 +49,7 @@ export default function KanbanColumn({
     'In Progress': CircleDot,
     'Done': CheckCircle2,
   };
-  const IconComponent = statusIconMap[column.id];
+  const IconComponent = statusIconMap[column.id] || CircleDot;
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {

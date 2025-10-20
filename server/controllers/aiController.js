@@ -2,10 +2,6 @@ import Project from "../models/projectModel.js";
 import Task from "../models/taskModel.js";
 import { generateText } from "../utils/geminiClient.js";
 
-/**
- * POST /api/ai/summarize
- * Body: { projectId }
- */
 export const summarizeProject = async (req, res) => {
   try {
     const { projectId } = req.body;
@@ -16,7 +12,6 @@ export const summarizeProject = async (req, res) => {
 
     const tasks = await Task.find({ projectId }).sort({ status: 1, order: 1 }).lean();
 
-    // Group tasks by status for a clear overview
     const groupedTasks = project.columnOrder.reduce((acc, col) => {
       acc[col] = tasks
         .filter(t => t.status === col)
@@ -26,10 +21,9 @@ export const summarizeProject = async (req, res) => {
     }, {});
 
     const completed = tasks.filter(t => t.status === "Done").length;
-    const total = tasks.length || 1; // Avoid division by zero
+    const total = tasks.length || 1;
     const progress = ((completed / total) * 100).toFixed(0);
 
-    // --- NEW ENHANCED PROMPT ---
     const prompt = `
 You are "Flow", an expert project management AI assistant. Your tone is professional, insightful, and encouraging.
 
@@ -43,8 +37,8 @@ You are "Flow", an expert project management AI assistant. Your tone is professi
 
 ### Task Distribution by Status
 ${Object.entries(groupedTasks)
-  .map(([status, list]) => `**${status}**:\n${list || "_No tasks in this column._"}\n`)
-  .join("\n")}
+        .map(([status, list]) => `**${status}**:\n${list || "_No tasks in this column._"}\n`)
+        .join("\n")}
 
 ---
 **Your Mandate:**
@@ -79,10 +73,6 @@ ${Object.entries(groupedTasks)
   }
 };
 
-/**
- * POST /api/ai/ask
- * Body: { projectId, question }
- */
 export const askAI = async (req, res) => {
   try {
     const { projectId, question } = req.body;
@@ -98,7 +88,6 @@ export const askAI = async (req, res) => {
       .map(t => `• Task: "${t.title}" [Status: ${t.status}] - Description: ${t.description || "None"}`)
       .join("\n");
 
-    // --- NEW ENHANCED PROMPT ---
     const prompt = `
 You are "Flow", an expert project management AI assistant. Your persona is helpful, professional, and precise. You must answer the user's question based *only* on the context provided below.
 

@@ -13,7 +13,6 @@ const router = express.Router();
 router.route("/").get(getProjects).post(createProject);
 router.route("/:id").get(getProjectById).put(updateProject).delete(deleteProject);
 
-// Route to add a new column to a project
 router.route("/:id/columns").post(addColumn);
 
 export default router;

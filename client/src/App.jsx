@@ -1,8 +1,6 @@
-// src/App.jsx
-
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { motion } from 'framer-motion'; // 👈 1. Import motion
+import { motion } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 import ProjectsPage from './pages/ProjectsPage';
 import KanbanPage from './pages/KanbanPage';
@@ -20,7 +18,6 @@ function AppContent() {
   });
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
-  // 👇 2. Add a state to track if we are on a desktop-sized screen
   const [isDesktop, setIsDesktop] = useState(() => {
     return typeof window !== 'undefined' && window.innerWidth >= 1024;
   });
@@ -28,7 +25,6 @@ function AppContent() {
   useEffect(() => {
     const handleResize = () => {
       const isLargeScreen = window.innerWidth >= 1024;
-      // We only want the sidebar to auto-open/close on resize, not be forced
       if (isLargeScreen !== isDesktop) {
         setIsSidebarOpen(isLargeScreen);
         setIsDesktop(isLargeScreen);
@@ -37,7 +33,7 @@ function AppContent() {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isDesktop]); // Depend on isDesktop
+  }, [isDesktop]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -86,10 +82,9 @@ function AppContent() {
     setToast(null);
   };
 
-  // 👇 3. Define animation variants for the main content area
   const mainVariants = {
     open: {
-      marginLeft: isDesktop ? '288px' : '0px', // 288px is w-72 from Tailwind
+      marginLeft: isDesktop ? '288px' : '0px',
     },
     closed: {
       marginLeft: '0px',
@@ -98,19 +93,17 @@ function AppContent() {
 
   return (
     <>
-      {/* 👇 4. Change the parent div slightly to handle overflow correctly */}
       <div className="relative h-screen bg-gray-100 text-foreground overflow-hidden">
         <Sidebar
           onNewProject={() => handleOpenProjectModal()}
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />
-        {/* 👇 5. Change <main> to <motion.main> and add animation props */}
         <motion.main
-          className="flex-1 h-full" // Changed from overflow-hidden to h-full
+          className="flex-1 h-full"
           variants={mainVariants}
           animate={isSidebarOpen ? 'open' : 'closed'}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }} // MUST match sidebar's transition
+          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         >
           <Routes>
             <Route path="/" element={<Navigate to="/projects" replace />} />
@@ -159,7 +152,6 @@ function AppContent() {
   );
 }
 
-// App and AppProvider remain the same...
 function App() {
   return (
     <AppProvider>

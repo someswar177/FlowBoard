@@ -1,7 +1,6 @@
 import Project from "../models/projectModel.js";
 import Task from "../models/taskModel.js";
 
-// GET /api/projects
 export const getProjects = async (req, res) => {
   try {
     const { populateTaskCount } = req.query;
@@ -28,7 +27,6 @@ export const getProjects = async (req, res) => {
   }
 };
 
-// POST /api/projects
 export const createProject = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -43,7 +41,6 @@ export const createProject = async (req, res) => {
   }
 };
 
-// GET /api/projects/:id
 export const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,16 +60,41 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// PUT /api/projects/:id
 export const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, description, oldName, newName } = req.body;
     const project = await Project.findById(id);
-    if (!project) return res.status(404).json({ message: "Project not found" });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
 
     if (name) project.name = name;
     if (description !== undefined) project.description = description;
+
+    if (oldName && newName) {
+      const trimmedNewName = newName.trim();
+      if (!trimmedNewName) {
+        return res.status(400).json({ message: "New column name cannot be empty." });
+      }
+      if (project.columnOrder.includes(trimmedNewName)) {
+        return res.status(400).json({ message: "A column with this name already exists." });
+      }
+
+      const columnIndex = project.columnOrder.indexOf(oldName);
+      if (columnIndex > -1) {
+        project.columnOrder[columnIndex] = trimmedNewName;
+        project.markModified('columnOrder'); 
+      } else {
+        return res.status(404).json({ message: `Column '${oldName}' not found.` });
+      }
+
+      await Task.updateMany(
+        { projectId: id, status: oldName },
+        { $set: { status: trimmedNewName } }
+      );
+    }
 
     await project.save();
     res.json(project);
@@ -81,16 +103,13 @@ export const updateProject = async (req, res) => {
   }
 };
 
-// DELETE /api/projects/:id
 export const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
     const project = await Project.findById(id);
     if (!project) return res.status(404).json({ message: "Project not found" });
 
-    // Delete related tasks
     await Task.deleteMany({ projectId: id });
-    // Delete the project itself
     await Project.findByIdAndDelete(id);
 
     res.json({ message: "Project and related tasks deleted" });
@@ -100,7 +119,6 @@ export const deleteProject = async (req, res) => {
   }
 };
 
-// POST /api/projects/:id/columns
 export const addColumn = async (req, res) => {
   try {
     const { id } = req.params;

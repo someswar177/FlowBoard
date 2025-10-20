@@ -81,6 +81,23 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
     fetchProjectData();
   }, [fetchProjectData]);
 
+  const handleRenameColumn = async (columnId, newTitle) => {
+    console.log(columnId,newTitle)
+
+    try {
+      await projectService.update(projectId, { 
+        oldName: columnId, 
+        newName: newTitle 
+      });
+      showToast('Column renamed successfully!', 'success');
+      
+      await fetchProjectData(); 
+
+    } catch (error) {
+      showToast(`Failed to rename column: ${error.message}`, 'error');
+    }
+  };
+
   const handleDragEnd = async (result) => {
     const { source, destination } = result;
     if (!destination) return;
@@ -203,41 +220,6 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
     }
   };
 
-  const handleRenameColumn = async (oldColumnName, newColumnName) => {
-    if (!newColumnName || oldColumnName === newColumnName) return;
-
-    if (columns[newColumnName]) {
-      showToast('A column with this name already exists.', 'error');
-      return;
-    }
-
-    try {
-      const tasksInColumn = columns[oldColumnName].tasks;
-      const taskUpdates = tasksInColumn.map(task => ({
-        _id: task._id,
-        status: newColumnName,
-        order: task.order
-      }));
-
-      if (taskUpdates.length > 0) {
-        await taskService.updateOrder(taskUpdates);
-      }
-
-      const updatedColumnOrder = Object.keys(columns).map(col =>
-        col === oldColumnName ? newColumnName : col
-      );
-
-      await projectService.update(projectId, {
-        columnOrder: updatedColumnOrder
-      });
-
-      showToast('Column renamed!', 'success');
-      await fetchProjectData();
-    } catch (error) {
-      showToast(`Failed to rename column: ${error.message}`, 'error');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="h-full flex flex-col bg-slate-50">
@@ -321,7 +303,6 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          {/* AI Assistant Button (desktop) */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -332,7 +313,6 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
             <span className="hidden md:inline">AI Assistant</span>
           </motion.button>
 
-          {/* AI Assistant Button (mobile) */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

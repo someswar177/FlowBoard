@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
-import { useState, useEffect } from 'react'; // <-- Import useEffect
+import { useState, useEffect } from 'react';
 import { aiService } from '../../api/aiService';
 import { marked } from 'marked';
 
@@ -8,13 +8,8 @@ export default function ColumnSummarizer({ projectId, onClose }) {
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  // --- FIX START ---
-  // 1. State to hold the dynamic loading message
   const [loadingMessage, setLoadingMessage] = useState('Connecting to AI...');
-  // --- FIX END ---
 
-  // --- FIX START ---
-  // 2. useEffect to cycle through loading messages
   useEffect(() => {
     let timeouts = [];
     if (isLoading) {
@@ -25,26 +20,23 @@ export default function ColumnSummarizer({ projectId, onClose }) {
         'Crafting your summary...',
       ];
       let i = 0;
-      setLoadingMessage('Connecting to AI...'); // Reset to initial message
+      setLoadingMessage('Connecting to AI...');
 
-      // Function to update message
       const updateMessage = () => {
         if (i < messages.length) {
           setLoadingMessage(messages[i]);
           i++;
-          timeouts.push(setTimeout(updateMessage, 2000)); // Change every 2 seconds
+          timeouts.push(setTimeout(updateMessage, 2000));
         }
       };
       
-      timeouts.push(setTimeout(updateMessage, 1500)); // Start after 1.5 seconds
+      timeouts.push(setTimeout(updateMessage, 1500));
     }
 
-    // 3. Cleanup function to clear timeouts if component unmounts or loading stops
     return () => {
       timeouts.forEach(clearTimeout);
     };
   }, [isLoading]);
-  // --- FIX END ---
 
   const handleSummarize = async () => {
     setIsLoading(true);
@@ -102,10 +94,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                 />
-                {/* --- FIX START --- */}
-                {/* 4. Display the dynamic loading message */}
                 {loadingMessage}
-                {/* --- FIX END --- */}
               </div>
             ) : (
               `Summarize Project`
