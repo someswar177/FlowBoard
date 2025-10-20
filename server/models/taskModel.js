@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-const VALID_STATUSES = ["To Do", "In Progress", "Done"];
-
 const taskSchema = new mongoose.Schema(
   {
     projectId: {
@@ -17,12 +15,12 @@ const taskSchema = new mongoose.Schema(
     },
     description: {
       type: String,
+   
       trim: true,
       default: "",
     },
     status: {
       type: String,
-      enum: VALID_STATUSES,
       default: "To Do",
     },
     order: {
@@ -32,7 +30,6 @@ const taskSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const Task = mongoose.model("Task", taskSchema);
-export { VALID_STATUSES };
+
 export default Task;

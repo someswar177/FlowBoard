@@ -5,24 +5,20 @@ import Task from "../models/taskModel.js";
 export const getProjects = async (req, res) => {
   try {
     const { populateTaskCount } = req.query;
-
     const projects = await Project.find().sort({ createdAt: -1 }).lean();
 
     if (populateTaskCount === "true") {
       const counts = await Task.aggregate([
         { $group: { _id: "$projectId", taskCount: { $sum: 1 } } }
       ]);
-
       const countMap = counts.reduce((acc, cur) => {
         acc[cur._id.toString()] = cur.taskCount;
         return acc;
       }, {});
-
       const projectsWithCounts = projects.map(project => ({
         ...project,
         taskCount: countMap[project._id.toString()] || 0
       }));
-
       return res.json(projectsWithCounts);
     }
 
@@ -89,19 +85,44 @@ export const updateProject = async (req, res) => {
 export const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
-
     const project = await Project.findById(id);
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     // Delete related tasks
     await Task.deleteMany({ projectId: id });
-
     // Delete the project itself
     await Project.findByIdAndDelete(id);
 
     res.json({ message: "Project and related tasks deleted" });
   } catch (error) {
     console.error("Error deleting project:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/projects/:id/columns
+export const addColumn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { columnName } = req.body;
+
+    if (!columnName || columnName.trim().length === 0) {
+      return res.status(400).json({ message: "Column name is required" });
+    }
+
+    const project = await Project.findById(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.columnOrder.includes(columnName.trim())) {
+      return res.status(400).json({ message: "Column name already exists" });
+    }
+
+    project.columnOrder.push(columnName.trim());
+    await project.save();
+    res.status(200).json(project);
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

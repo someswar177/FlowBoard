@@ -12,10 +12,15 @@ const projectSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    columnOrder: {
+      type: [String],
+      default: ["To Do", "In Progress", "Done"],
+    },
   },
   {
     timestamps: true, // automatically adds createdAt and updatedAt
-    toJSON: { virtuals: true },
+    toJSON: { 
+ virtuals: true },
     toObject: { virtuals: true },
   }
 );
@@ -27,6 +32,5 @@ projectSchema.virtual("tasks", {
   foreignField: "projectId",
   justOne: false,
 });
-
 const Project = mongoose.model("Project", projectSchema);
 export default Project;

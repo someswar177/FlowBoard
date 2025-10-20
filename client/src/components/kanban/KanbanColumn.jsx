@@ -1,16 +1,14 @@
 import { motion } from 'framer-motion';
 import {
   Plus,
-  MoreVertical,
   Sparkles,
   X,
-  Edit2,
   CircleDashed,
   CircleDot,
   CheckCircle2,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import ColumnSummarizer from '../ai/ColumnSummarizer';
 
 export default function KanbanColumn({
@@ -20,66 +18,30 @@ export default function KanbanColumn({
   onAddTask,
   onEditTask,
   onDeleteTask,
-  onRenameColumn,
   droppableProvided,
-  droppableSnapshot,
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [newTitle, setNewTitle] = useState(column.title);
-  const inputRef = useRef(null);
-
   const colorMap = {
     'To Do': 'bg-blue-50/80 border-blue-200',
     'In Progress': 'bg-amber-50/80 border-amber-200',
     'Done': 'bg-emerald-50/80 border-emerald-200',
   };
-
   const badgeColorMap = {
     'To Do': 'bg-blue-100 text-blue-700',
     'In Progress': 'bg-amber-100 text-amber-700',
     'Done': 'bg-emerald-100 text-emerald-700',
   };
-
   const headerBadgeColorMap = {
     'To Do': 'bg-blue-600',
     'In Progress': 'bg-amber-600',
     'Done': 'bg-emerald-600',
   };
-
   const statusIconMap = {
     'To Do': CircleDashed,
     'In Progress': CircleDot,
     'Done': CheckCircle2,
   };
-
   const IconComponent = statusIconMap[column.id];
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
-
-  const handleRename = () => {
-    if (newTitle.trim() && newTitle.trim() !== column.title) {
-      onRenameColumn(column.id, newTitle.trim());
-    }
-    setIsEditing(false);
-    setShowOptions(false);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleRename();
-    } else if (e.key === 'Escape') {
-      setNewTitle(column.title);
-      setIsEditing(false);
-      setShowOptions(false);
-    }
-  };
 
   return (
     <motion.div
@@ -91,26 +53,14 @@ export default function KanbanColumn({
     >
       <div className="p-3 sm:p-4 border-b border-slate-200/60">
         <div className="flex items-center justify-between mb-3">
-          {isEditing ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onBlur={handleRename}
-              onKeyDown={handleKeyDown}
-              className="font-bold text-base sm:text-lg bg-transparent border-b-2 border-blue-600 focus:outline-none w-full text-slate-900"
-            />
-          ) : (
-            <div
-              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-white font-semibold text-xs sm:text-sm ${
-                headerBadgeColorMap[column.id] || 'bg-slate-500'
-              }`}
-            >
-              {IconComponent && <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3.2} />}
-              <span>{column.title.toUpperCase()}</span>
-            </div>
-          )}
+          <div
+            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-white font-semibold text-xs sm:text-sm ${
+              headerBadgeColorMap[column.id] || 'bg-slate-500'
+            }`}
+          >
+            {IconComponent && <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3.2} />}
+            <span>{column.title.toUpperCase()}</span>
+          </div>
 
           <div className="flex items-center gap-1 relative">
             <motion.button
@@ -122,30 +72,6 @@ export default function KanbanColumn({
             >
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </motion.button>
-            <motion.button
-              whileHover={{ rotate: 90 }}
-              onClick={() => setShowOptions(!showOptions)}
-              className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600"
-            >
-              <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </motion.button>
-            {showOptions && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full right-0 mt-2 w-32 bg-white border border-slate-200 rounded-xl shadow-medium z-20 overflow-hidden"
-              >
-                <button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setShowOptions(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 text-slate-700 transition-colors"
-                >
-                  <Edit2 className="w-3.5 h-3.5" /> Rename
-                </button>
-              </motion.div>
-            )}
           </div>
         </div>
 

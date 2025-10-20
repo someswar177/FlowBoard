@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, ChevronLeft, Sparkles, Menu } from 'lucide-react';
+import { Plus, ChevronLeft, Sparkles, Menu, X } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
@@ -10,12 +10,6 @@ import { projectService } from '../api/projectService';
 import { taskService } from '../api/taskService';
 import { useApp } from '../context/AppContext';
 import { Navigate } from "react-router-dom";
-
-const COLUMN_CONFIG = {
-  'To Do': { title: 'To Do' },
-  'In Progress': { title: 'In Progress' },
-  'Done': { title: 'Done' },
-};
 
 export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   const { projectId } = useParams();
@@ -31,6 +25,10 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   const { showToast } = useApp();
   const hasLoadedRef = useRef(false);
 
+  // State for adding a new column
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
+
   const fetchProjectData = useCallback(async () => {
     try {
       if (!projectId) return;
@@ -44,18 +42,29 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
       const fetchedProject = await projectService.getById(projectId, true);
       setProject(fetchedProject);
       const tasks = fetchedProject.tasks || [];
-
       const initialColumns = {};
-      Object.keys(COLUMN_CONFIG).forEach((key) => {
-        initialColumns[key] = {
-          id: key,
-          title: fetchedProject.columnNames?.[key] || COLUMN_CONFIG[key].title,
+
+      // Define default columns that should always be present
+      const defaultColumns = ["To Do", "In Progress", "Done"];
+      // Get any custom columns from the project data
+      const customColumns = fetchedProject.columnOrder || [];
+
+      // Combine default and custom columns, ensuring no duplicates and preserving order
+      const columnOrder = [...new Set([...defaultColumns, ...customColumns])];
+
+
+      // Initialize columns based on the combined and ordered list
+      columnOrder.forEach((columnName) => {
+        initialColumns[columnName] = {
+          id: columnName,
+          title: columnName,
           tasks: [],
         };
       });
 
+      // Distribute tasks into the appropriate columns
       tasks.forEach((task) => {
-        if (initialColumns[task.status]) {
+        if (task.status && initialColumns[task.status]) {
           initialColumns[task.status].tasks.push(task);
         }
       });
@@ -77,79 +86,58 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
     fetchProjectData();
   }, [fetchProjectData]);
 
-  const handleRenameColumn = async (columnId, newTitle) => {
-    const oldTitle = columns[columnId].title;
-    const updatedColumns = {
-      ...columns,
-      [columnId]: { ...columns[columnId], title: newTitle },
-    };
+  const handleDragEnd = async (result) => {
+    const { source, destination } = result;
+    if (!destination) return;
+
+    const originalColumns = JSON.parse(JSON.stringify(columns));
+    const sourceColId = source.droppableId;
+    const destColId = destination.droppableId;
+    const sourceCol = columns[sourceColId];
+    const destCol = columns[destColId];
+    const sourceTasks = [...sourceCol.tasks];
+    const [movedTask] = sourceTasks.splice(source.index, 1);
+    let updatedColumns = { ...columns };
+    let tasksToUpdate = [];
+    if (sourceColId === destColId) {
+      sourceTasks.splice(destination.index, 0, movedTask);
+      const reorderedTasks = sourceTasks.map((task, index) => ({
+        ...task,
+        order: index,
+      }));
+      updatedColumns[sourceColId] = { ...sourceCol, tasks: reorderedTasks };
+      tasksToUpdate = reorderedTasks.map(({ _id, order, status }) => ({ _id, order, status }));
+    } else {
+      const destTasks = [...destCol.tasks];
+      destTasks.splice(destination.index, 0, movedTask);
+
+      const newSourceTasks = sourceTasks.map((task, index) => ({
+        ...task,
+        order: index,
+      }));
+
+      const newDestTasks = destTasks.map((task, index) => ({
+        ...task,
+        status: destColId,
+        order: index,
+      }));
+      updatedColumns[sourceColId] = { ...sourceCol, tasks: newSourceTasks };
+      updatedColumns[destColId] = { ...destCol, tasks: newDestTasks };
+      tasksToUpdate = [
+        ...newSourceTasks.map(({ _id, order, status }) => ({ _id, order, status })),
+        ...newDestTasks.map(({ _id, order, status }) => ({ _id, order, status })),
+      ];
+    }
+
     setColumns(updatedColumns);
 
     try {
-      const currentColumnNames = project.columnNames || {
-        'To Do': 'To Do',
-        'In Progress': 'In Progress',
-        'Done': 'Done',
-      };
-      const newColumnNames = { ...currentColumnNames, [columnId]: newTitle };
-      await projectService.update(projectId, { columnNames: newColumnNames });
-      showToast('Column renamed!');
-    } catch (error) {
-      showToast(`Failed to rename column: ${error.message}`, 'error');
-      const revertedColumns = {
-        ...columns,
-        [columnId]: { ...columns[columnId], title: oldTitle },
-      };
-      setColumns(revertedColumns);
-    }
-  };
-
-  const handleDragEnd = async (result) => {
-    const { source, destination, draggableId } = result;
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return;
-    }
-
-    const startCol = columns[source.droppableId];
-    const endCol = columns[destination.droppableId];
-    const originalColumns = JSON.parse(JSON.stringify(columns));
-
-    const startTasks = Array.from(startCol.tasks);
-    const [movedTask] = startTasks.splice(source.index, 1);
-
-    if (startCol === endCol) {
-      startTasks.splice(destination.index, 0, movedTask);
-      const reorderedTasks = startTasks.map((task, index) => ({ ...task, order: index }));
-      const newColumns = {
-        ...columns,
-        [startCol.id]: { ...startCol, tasks: reorderedTasks },
-      };
-      setColumns(newColumns);
-    } else {
-      const endTasks = Array.from(endCol.tasks);
-      endTasks.splice(destination.index, 0, { ...movedTask, status: endCol.id });
-      const newStartTasks = startTasks.map((task, index) => ({ ...task, order: index }));
-      const newEndTasks = endTasks.map((task, index) => ({ ...task, order: index }));
-      const newColumns = {
-        ...columns,
-        [startCol.id]: { ...startCol, tasks: newStartTasks },
-        [endCol.id]: { ...endCol, tasks: newEndTasks },
-      };
-      setColumns(newColumns);
-    }
-
-    try {
-      await taskService.update(draggableId, {
-        status: destination.droppableId,
-        order: destination.index,
-      });
+      await taskService.updateOrder(tasksToUpdate);
     } catch (error) {
       showToast(`Failed to move task: ${error.message}`, 'error');
       setColumns(originalColumns);
     }
   };
-
   const handleSaveTask = async (data) => {
     try {
       if (selectedTask) {
@@ -190,6 +178,28 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
     setSelectedTask(task);
     setShowTaskModal(true);
   };
+  
+  const handleAddNewColumn = async () => {
+    const trimmedName = newColumnName.trim();
+    if (!trimmedName) {
+      showToast('Column name cannot be empty.', 'error');
+      return;
+    }
+    if (columns[trimmedName]) {
+      showToast('A column with this name already exists.', 'error');
+      return;
+    }
+    try {
+      await projectService.addColumn(projectId, trimmedName);
+      showToast('Column added!', 'success');
+      setNewColumnName('');
+      setIsAddingColumn(false);
+      await fetchProjectData();
+    } catch (error) {
+      showToast(`Failed to add column: ${error.message}`, 'error');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -199,51 +209,47 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
             {!isSidebarOpen && (
               <button
                 onClick={onToggleSidebar}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
               >
                 <Menu className="w-5 h-5 text-slate-600" />
               </button>
             )}
             <div className="min-w-0 flex-1 animate-pulse">
-              <div className="h-6 sm:h-8 bg-slate-200 rounded w-48 mb-1"></div>
+               <div className="h-6 sm:h-8 bg-slate-200 rounded w-48 mb-1"></div>
               <div className="h-3 sm:h-4 bg-slate-200 rounded w-32 hidden sm:block"></div>
             </div>
           </div>
         </div>
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
           <div className="flex items-start gap-3 sm:gap-6 h-full">
+            
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="w-[280px] sm:w-86 bg-white/50 border-2 border-slate-200 rounded-2xl shadow-sm animate-pulse"
               >
                 <div className="p-3 sm:p-4 border-b border-slate-200">
-                  <div className="h-8 bg-slate-200 rounded-lg w-32 mb-3"></div>
+                   <div className="h-8 bg-slate-200 rounded-lg w-32 mb-3"></div>
                   <div className="h-6 bg-slate-200 rounded-full w-20"></div>
                 </div>
                 <div className="p-2 sm:p-3 space-y-2">
                   {[1, 2].map((j) => (
-                    <div key={j} className="p-3 sm:p-4 bg-white rounded-xl border border-slate-200">
+                     <div key={j} className="p-3 sm:p-4 bg-white rounded-xl border border-slate-200">
                       <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
                       <div className="h-3 bg-slate-200 rounded w-full mb-1"></div>
                       <div className="h-3 bg-slate-200 rounded w-2/3"></div>
-                    </div>
+                     </div>
                   ))}
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+       </div>
     );
   }
 
   if (!project) {
-    // return (
-    //   <div className="flex items-center justify-center h-full text-red-600">
-    //     Could not load project. Please go back and try again.
-    //   </div>
-    // );
     return <Navigate to="/" replace />;
   }
 
@@ -256,14 +262,14 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
       >
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           {!isSidebarOpen && (
-            <button
+             <button
               onClick={onToggleSidebar}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
             >
               <Menu className="w-5 h-5 text-slate-600" />
             </button>
           )}
-          <motion.button
+           <motion.button
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/projects')}
@@ -278,37 +284,37 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowAIPanel(!showAIPanel)}
             className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-md transition-all text-sm"
           >
-            <Sparkles className="w-4 h-4" />
+             <Sparkles className="w-4 h-4" />
             <span className="hidden md:inline">AI Assistant</span>
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowAIPanel(!showAIPanel)}
-            className="sm:hidden p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all"
+             className="sm:hidden p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all"
           >
             <Sparkles className="w-4 h-4" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])}
+            onClick={() => setIsAddingColumn(true)}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 sm:w-auto rounded-lg border-2 border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-sm sm:text-base font-medium justify-center sm:justify-start"
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5"/>
-            <span className="hidden sm:inline">New Column</span>
+            <span className="hidden sm:inline">Add Column</span>
           </motion.button>
         </div>
       </motion.div>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
+       <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
         <DragDropContext
           onDragStart={() => setIsDragging(true)}
           onDragEnd={(result) => {
@@ -321,22 +327,54 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
               Object.values(columns).map((column) => (
                 <Droppable key={column.id} droppableId={column.id}>
                   {(provided, snapshot) => (
-                    <KanbanColumn
+                     <KanbanColumn
                       column={column}
                       isDraggingOver={snapshot.isDraggingOver}
                       isDragging={isDragging}
-                      onAddTask={() => handleOpenCreateModal(column.id)}
+                       onAddTask={() => handleOpenCreateModal(column.id)}
                       onEditTask={(task) => handleOpenEditModal(task)}
                       onDeleteTask={handleDeleteTask}
-                      onRenameColumn={handleRenameColumn}
                       droppableProvided={provided}
-                      droppableSnapshot={snapshot}
-                    />
+                     />
                   )}
                 </Droppable>
               ))}
+              {isAddingColumn && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col rounded-2xl border-2 border-slate-200 bg-slate-50/80 shadow-sm w-[280px] sm:w-86 p-3 sm:p-4"
+                >
+                  <input
+                    type="text"
+                    value={newColumnName}
+                    onChange={(e) => setNewColumnName(e.target.value)}
+                    placeholder="Enter column name..."
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddNewColumn()}
+                    className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                  />
+                  <div className="flex items-center gap-2 mt-3">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleAddNewColumn}
+                      className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-md transition-all text-sm"
+                    >
+                      Add Column
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => setIsAddingColumn(false)}
+                      className="p-2 hover:bg-slate-200/60 rounded-lg"
+                    >
+                      <X className="w-4 h-4 text-slate-600" />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
           </div>
-        </DragDropContext>
+         </DragDropContext>
       </div>
 
       {showTaskModal && (

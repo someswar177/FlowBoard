@@ -14,4 +14,6 @@ export const projectService = {
   delete: (id) => apiClient.delete(`/projects/${id}`),
 
   createTask: (projectId, data) => apiClient.post(`/projects/${projectId}/tasks`, data),
+
+  addColumn: (projectId, columnName) => apiClient.post(`/projects/${projectId}/columns`, { columnName }),
 };
