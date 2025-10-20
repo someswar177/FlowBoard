@@ -49,7 +49,7 @@ export default function KanbanColumn({
     'In Progress': CircleDot,
     'Done': CheckCircle2,
   };
-  const IconComponent = statusIconMap[column.id] || CircleDot;
+  const IconComponent = statusIconMap[column.id];
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -64,7 +64,6 @@ export default function KanbanColumn({
       onRenameColumn(column.id, trimmedName);
     }
     setIsRenaming(false);
-    setNewColumnName(column.title);
   };
 
   const handleRenameCancel = () => {
@@ -93,7 +92,7 @@ export default function KanbanColumn({
                   if (e.key === 'Enter') handleRenameSubmit();
                   if (e.key === 'Escape') handleRenameCancel();
                 }}
-                onBlur={handleRenameCancel}
+                onBlur={handleRenameSubmit}
                 className="flex-1 px-2 py-1 text-xs sm:text-sm font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <motion.button
@@ -135,18 +134,16 @@ export default function KanbanColumn({
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowSummarizer(!showSummarizer)}
                 className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
-                title="Get AI Project Summary"
+                title={`Get AI Summary for "${column.title}"`}
               >
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </motion.button>
             </div>
           )}
         </div>
-
         <span
           className={`inline-flex items-center px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold ${
-            badgeColorMap[column.id] ||
-            'bg-slate-100 text-slate-700'
+            badgeColorMap[column.id] || 'bg-slate-100 text-slate-700'
           }`}
         >
           {column.tasks.length} {column.tasks.length === 1 ? 'task' : 'tasks'}
@@ -198,7 +195,6 @@ export default function KanbanColumn({
             )}
           </Draggable>
         ))}
-
         {droppableProvided && droppableProvided.placeholder}
       </div>
 
@@ -217,6 +213,7 @@ export default function KanbanColumn({
       {showSummarizer && (
         <ColumnSummarizer
           projectId={projectId}
+          columnName={column.id}
           onClose={() => setShowSummarizer(false)}
         />
       )}

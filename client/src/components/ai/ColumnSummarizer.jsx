@@ -1,27 +1,44 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // 1. useRef is imported
 import { aiService } from '../../api/aiService';
 import { marked } from 'marked';
 
-export default function ColumnSummarizer({ projectId, onClose }) {
+export default function ColumnSummarizer({ projectId, columnName, onClose }) {
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('Connecting to AI...');
+  const summarizerRef = useRef(null); // 2. Create a ref for the component's wrapper
 
+  // --- NEW: Logic to handle clicking outside the component ---
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // If the ref is attached and the click is outside the ref's element
+      if (summarizerRef.current && !summarizerRef.current.contains(event.target)) {
+        onClose(); // Trigger the close function from the parent
+      }
+    }
+    // Add the event listener to the whole document
+    document.addEventListener("mousedown", handleClickOutside);
+    // Cleanup: remove the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]); // The hook depends on the onClose function
+  // --- END OF NEW LOGIC ---
+
+  // This useEffect for loading messages remains unchanged
   useEffect(() => {
     let timeouts = [];
     if (isLoading) {
       const messages = [
         'Analyzing tasks...',
-        'Identifying risks...',
-        'Checking for bottlenecks...',
+        'Identifying patterns...',
         'Crafting your summary...',
       ];
       let i = 0;
       setLoadingMessage('Connecting to AI...');
-
       const updateMessage = () => {
         if (i < messages.length) {
           setLoadingMessage(messages[i]);
@@ -29,10 +46,8 @@ export default function ColumnSummarizer({ projectId, onClose }) {
           timeouts.push(setTimeout(updateMessage, 2000));
         }
       };
-      
       timeouts.push(setTimeout(updateMessage, 1500));
     }
-
     return () => {
       timeouts.forEach(clearTimeout);
     };
@@ -43,7 +58,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
     setError(null);
     setSummary(null);
     try {
-      const result = await aiService.summarizeProject(projectId);
+      const result = await aiService.summarizeProject(projectId, columnName);
       setSummary(result.summary);
     } catch (err) {
       setError('Failed to generate summary. Please try again.');
@@ -56,6 +71,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
   return (
     <AnimatePresence>
       <motion.div
+        ref={summarizerRef} // 3. Attach the ref to the main div
         initial={{ opacity: 0, scale: 0.95, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -66,7 +82,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h3 className="font-bold text-sm text-slate-900">AI Project Summary</h3>
+            <h3 className="font-bold text-sm text-slate-900">AI Summary</h3>
           </div>
           <motion.button
             whileHover={{ rotate: 90, scale: 1.1 }}
@@ -97,7 +113,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
                 {loadingMessage}
               </div>
             ) : (
-              `Summarize Project`
+              `Summarize "${columnName}" Column`
             )}
           </motion.button>
         ) : (
@@ -115,7 +131,7 @@ export default function ColumnSummarizer({ projectId, onClose }) {
               disabled={isLoading}
               className="w-full px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors text-slate-700"
             >
-              {isLoading ? 'Regenerating...' : 'Get Another Summary'}
+              {isLoading ? 'Regenerating...' : 'Regenerate Summary'}
             </motion.button>
           </motion.div>
         )}

@@ -128,6 +128,7 @@ function AppContent() {
                 />
               }
             />
+            <Route path="*" element={<Navigate to="/projects" replace />} />
           </Routes>
         </motion.main>
       </div>
