@@ -8,7 +8,8 @@ export default function AIPanel({ projectContext, onClose }) {
     {
       id: 'init',
       type: 'ai',
-      content: "Hello! Ask me anything about this project, like 'what are the next steps?' or 'summarize the tasks in progress'.",
+      content:
+        "Hello! Ask me anything about this project, like 'what are the next steps?' or 'summarize the tasks in progress'.",
     },
   ]);
   const [input, setInput] = useState('');
@@ -35,9 +36,9 @@ export default function AIPanel({ projectContext, onClose }) {
 
     try {
       const context = JSON.stringify({
-          name: projectContext.name,
-          description: projectContext.description,
-          tasks: projectContext.tasks,
+        name: projectContext.name,
+        description: projectContext.description,
+        tasks: projectContext.tasks,
       });
       const result = await aiService.ask(currentInput, context);
       const aiMessage = {
@@ -65,7 +66,7 @@ export default function AIPanel({ projectContext, onClose }) {
         initial={{ opacity: 0, x: 400 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 400 }}
-        className="fixed bottom-0 right-0 top-0 w-96 bg-white border-l border-slate-200 shadow-strong flex flex-col z-40"
+        className="fixed bottom-0 right-0 top-0 w-full sm:w-96 bg-white border-l border-slate-200 shadow-strong flex flex-col z-40"
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-cyan-50">
           <div className="flex items-center gap-2.5">
@@ -92,7 +93,7 @@ export default function AIPanel({ projectContext, onClose }) {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xs px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-sm ${
+                className={`max-w-[85%] px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-sm ${
                   message.type === 'user'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                     : 'bg-white text-slate-900 border border-slate-200'
@@ -125,7 +126,7 @@ export default function AIPanel({ projectContext, onClose }) {
               </div>
             </motion.div>
           )}
-           <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
         </div>
 
         <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-200 bg-white">

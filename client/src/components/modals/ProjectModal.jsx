@@ -4,15 +4,18 @@ import { useState, useEffect } from 'react';
 
 export default function ProjectModal({ project, onClose, onSave }) {
   const [formData, setFormData] = useState({ name: '', description: '' });
+
   useEffect(() => {
     if (project) {
       setFormData({ name: project.name, description: project.description });
     }
   }, [project]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({ ...formData, created: new Date().toISOString() });
   };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -20,7 +23,7 @@ export default function ProjectModal({ project, onClose, onSave }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100]"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4"
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}

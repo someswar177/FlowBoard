@@ -1,5 +1,14 @@
 import { motion } from 'framer-motion';
-import { Plus, MoreVertical, Sparkles, X, Edit2, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
+import {
+  Plus,
+  MoreVertical,
+  Sparkles,
+  X,
+  Edit2,
+  CircleDashed,
+  CircleDot,
+  CheckCircle2,
+} from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useState, useRef, useEffect } from 'react';
 import ColumnSummarizer from '../ai/ColumnSummarizer';
@@ -12,8 +21,8 @@ export default function KanbanColumn({
   onEditTask,
   onDeleteTask,
   onRenameColumn,
-  droppableProvided,    // new prop
-  droppableSnapshot,    // optional
+  droppableProvided,
+  droppableSnapshot,
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -76,9 +85,11 @@ export default function KanbanColumn({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex flex-col max-h-full rounded-2xl border-2 ${colorMap[column.id] || 'bg-slate-50/80 border-slate-200'} relative shadow-sm w-86`}
+      className={`flex flex-col max-h-full rounded-2xl border-2 ${
+        colorMap[column.id] || 'bg-slate-50/80 border-slate-200'
+      } relative shadow-sm w-[280px] sm:w-86`}
     >
-      <div className="p-4 border-b border-slate-200/60">
+      <div className="p-3 sm:p-4 border-b border-slate-200/60">
         <div className="flex items-center justify-between mb-3">
           {isEditing ? (
             <input
@@ -88,11 +99,15 @@ export default function KanbanColumn({
               onChange={(e) => setNewTitle(e.target.value)}
               onBlur={handleRename}
               onKeyDown={handleKeyDown}
-              className="font-bold text-lg bg-transparent border-b-2 border-blue-600 focus:outline-none w-full text-slate-900"
+              className="font-bold text-base sm:text-lg bg-transparent border-b-2 border-blue-600 focus:outline-none w-full text-slate-900"
             />
           ) : (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-white font-semibold text-sm ${headerBadgeColorMap[column.id] || 'bg-slate-500'}`}>
-              {IconComponent && <IconComponent className="w-4 h-4" strokeWidth={3.2} />}
+            <div
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-white font-semibold text-xs sm:text-sm ${
+                headerBadgeColorMap[column.id] || 'bg-slate-500'
+              }`}
+            >
+              {IconComponent && <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3.2} />}
               <span>{column.title.toUpperCase()}</span>
             </div>
           )}
@@ -105,14 +120,14 @@ export default function KanbanColumn({
               className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
               title="Summarize with AI"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </motion.button>
             <motion.button
               whileHover={{ rotate: 90 }}
               onClick={() => setShowOptions(!showOptions)}
               className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </motion.button>
             {showOptions && (
               <motion.div
@@ -121,7 +136,10 @@ export default function KanbanColumn({
                 className="absolute top-full right-0 mt-2 w-32 bg-white border border-slate-200 rounded-xl shadow-medium z-20 overflow-hidden"
               >
                 <button
-                  onClick={() => { setIsEditing(true); setShowOptions(false); }}
+                  onClick={() => {
+                    setIsEditing(true);
+                    setShowOptions(false);
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 text-slate-700 transition-colors"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Rename
@@ -131,21 +149,23 @@ export default function KanbanColumn({
           </div>
         </div>
 
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColorMap[column.id] || 'bg-slate-100 text-slate-700'}`}>
+        <span
+          className={`inline-flex items-center px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold ${
+            badgeColorMap[column.id] || 'bg-slate-100 text-slate-700'
+          }`}
+        >
           {column.tasks.length} {column.tasks.length === 1 ? 'task' : 'tasks'}
         </span>
       </div>
 
-      {/* TASKS CONTAINER: attach droppableProvided here so placeholder lives in tasks area */}
       <div
         ref={droppableProvided ? droppableProvided.innerRef : null}
         {...(droppableProvided ? droppableProvided.droppableProps : {})}
-        className={`p-3 space-y-2.5 transition-[height] duration-200 ease-in-out ${
-  column.tasks.length > 3 ? 'overflow-y-auto' : 'overflow-visible'
-} ${
-  isDraggingOver && column.tasks.length > 3 ? 'pb-24' : ''
-} ${isDragging && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''}`}
-
+        className={`p-2 sm:p-3 space-y-2 sm:space-y-2.5 transition-[height] duration-200 ease-in-out ${
+          column.tasks.length > 3 ? 'overflow-y-auto' : 'overflow-visible'
+        } ${isDraggingOver && column.tasks.length > 3 ? 'pb-24' : ''} ${
+          isDragging && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''
+        }`}
       >
         {column.tasks.map((task, index) => (
           <Draggable key={task._id} draggableId={task._id} index={index}>
@@ -155,15 +175,18 @@ export default function KanbanColumn({
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
                 onClick={() => onEditTask(task)}
-                className={`p-4 rounded-xl bg-white border border-slate-200 cursor-grab active-cursor-grabbing group hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-strong ring-2 ring-blue-500 scale-105' : ''
-                  }`}
+                className={`p-3 sm:p-4 rounded-xl bg-white border border-slate-200 cursor-grab active-cursor-grabbing group hover:shadow-md transition-all ${
+                  snapshot.isDragging ? 'shadow-strong ring-2 ring-blue-500 scale-105' : ''
+                }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm mb-1.5 text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <h4 className="font-semibold text-xs sm:text-sm mb-1.5 text-slate-900 group-hover:text-blue-600 transition-colors">
                       {task.title}
                     </h4>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{task.description}</p>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {task.description}
+                    </p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -171,9 +194,9 @@ export default function KanbanColumn({
                       e.stopPropagation();
                       onDeleteTask(task._id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all rounded-lg hover:bg-red-50"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all rounded-lg hover:bg-red-50 flex-shrink-0"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </motion.button>
                 </div>
               </div>
@@ -181,19 +204,18 @@ export default function KanbanColumn({
           </Draggable>
         ))}
 
-        {/* important: placeholder must be inside the tasks container */}
         {droppableProvided && droppableProvided.placeholder}
       </div>
 
-      <div className="p-3 border-t border-slate-200/60">
+      <div className="p-2 sm:p-3 border-t border-slate-200/60">
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           onClick={onAddTask}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
         >
-          <Plus className="w-4 h-4" />
-          <span className="text-sm font-semibold">Add Task</span>
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="text-xs sm:text-sm font-semibold">Add Task</span>
         </motion.button>
       </div>
 

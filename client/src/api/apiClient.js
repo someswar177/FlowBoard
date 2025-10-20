@@ -1,4 +1,3 @@
-// src/api/apiClient.js
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,10 +9,6 @@ const apiClient = axios.create({
   },
 });
 
-/**
- * Interceptor to handle API responses.
- * This is a good place to handle global errors or response transformations.
- */
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {

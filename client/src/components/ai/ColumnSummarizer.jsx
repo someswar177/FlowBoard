@@ -34,7 +34,7 @@ export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
         initial={{ opacity: 0, scale: 0.95, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-        className="absolute top-14 right-0 w-80 bg-white border border-slate-200 rounded-2xl shadow-strong p-4 z-40"
+        className="absolute top-14 right-0 w-72 sm:w-80 bg-white border border-slate-200 rounded-2xl shadow-strong p-4 z-40"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
             whileTap={{ scale: 0.99 }}
             onClick={handleSummarize}
             disabled={isLoading}
-            className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-md transition-all disabled:opacity-50"
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-md transition-all disabled:opacity-50 text-sm"
           >
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">

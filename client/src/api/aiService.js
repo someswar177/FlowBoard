@@ -1,4 +1,3 @@
-// src/api/aiService.js
 import apiClient from './apiClient';
 
 export const aiService = {

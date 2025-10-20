@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Plus, ChevronLeft, Sparkles } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Plus, ChevronLeft, Sparkles, Menu } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import KanbanColumn from '../components/kanban/KanbanColumn';
@@ -9,6 +9,7 @@ import AIPanel from '../components/ai/AIPanel';
 import { projectService } from '../api/projectService';
 import { taskService } from '../api/taskService';
 import { useApp } from '../context/AppContext';
+import { Navigate } from "react-router-dom";
 
 const COLUMN_CONFIG = {
   'To Do': { title: 'To Do' },
@@ -16,7 +17,7 @@ const COLUMN_CONFIG = {
   'Done': { title: 'Done' },
 };
 
-export default function KanbanPage() {
+export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
@@ -26,23 +27,30 @@ export default function KanbanPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedColumnId, setSelectedColumnId] = useState('');
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [isDragging, setIsDragging] = useState(false); // State to track drag status
+  const [isDragging, setIsDragging] = useState(false);
   const { showToast } = useApp();
+  const hasLoadedRef = useRef(false);
 
   const fetchProjectData = useCallback(async () => {
     try {
       if (!projectId) return;
-      setIsLoading(true);
+
+      if (hasLoadedRef.current) {
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
+
       const fetchedProject = await projectService.getById(projectId, true);
       setProject(fetchedProject);
       const tasks = fetchedProject.tasks || [];
 
       const initialColumns = {};
-      Object.keys(COLUMN_CONFIG).forEach(key => {
+      Object.keys(COLUMN_CONFIG).forEach((key) => {
         initialColumns[key] = {
           id: key,
           title: fetchedProject.columnNames?.[key] || COLUMN_CONFIG[key].title,
-          tasks: []
+          tasks: [],
         };
       });
 
@@ -57,6 +65,7 @@ export default function KanbanPage() {
       });
 
       setColumns(initialColumns);
+      hasLoadedRef.current = true;
     } catch (error) {
       showToast(`Failed to load project: ${error.message}`, 'error');
     } finally {
@@ -150,7 +159,7 @@ export default function KanbanPage() {
         await projectService.createTask(projectId, { ...data, status: selectedColumnId });
         showToast('Task created!');
       }
-      fetchProjectData();
+      await fetchProjectData();
     } catch (error) {
       showToast(`Failed to save task: ${error.message}`, 'error');
     } finally {
@@ -164,7 +173,7 @@ export default function KanbanPage() {
       try {
         await taskService.delete(taskId);
         showToast('Task deleted!');
-        fetchProjectData();
+        await fetchProjectData();
       } catch (error) {
         showToast(`Failed to delete task: ${error.message}`, 'error');
       }
@@ -183,11 +192,59 @@ export default function KanbanPage() {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-full text-slate-500">Loading Project Board...</div>;
+    return (
+      <div className="h-full flex flex-col bg-slate-50">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            {!isSidebarOpen && (
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              >
+                <Menu className="w-5 h-5 text-slate-600" />
+              </button>
+            )}
+            <div className="min-w-0 flex-1 animate-pulse">
+              <div className="h-6 sm:h-8 bg-slate-200 rounded w-48 mb-1"></div>
+              <div className="h-3 sm:h-4 bg-slate-200 rounded w-32 hidden sm:block"></div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
+          <div className="flex items-start gap-3 sm:gap-6 h-full">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-[280px] sm:w-86 bg-white/50 border-2 border-slate-200 rounded-2xl shadow-sm animate-pulse"
+              >
+                <div className="p-3 sm:p-4 border-b border-slate-200">
+                  <div className="h-8 bg-slate-200 rounded-lg w-32 mb-3"></div>
+                  <div className="h-6 bg-slate-200 rounded-full w-20"></div>
+                </div>
+                <div className="p-2 sm:p-3 space-y-2">
+                  {[1, 2].map((j) => (
+                    <div key={j} className="p-3 sm:p-4 bg-white rounded-xl border border-slate-200">
+                      <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-slate-200 rounded w-full mb-1"></div>
+                      <div className="h-3 bg-slate-200 rounded w-2/3"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!project) {
-     return <div className="flex items-center justify-center h-full text-red-600">Could not load project. Please go back and try again.</div>;
+    // return (
+    //   <div className="flex items-center justify-center h-full text-red-600">
+    //     Could not load project. Please go back and try again.
+    //   </div>
+    // );
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -195,45 +252,63 @@ export default function KanbanPage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shadow-sm"
+        className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-white shadow-sm"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+          {!isSidebarOpen && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <Menu className="w-5 h-5 text-slate-600" />
+            </button>
+          )}
           <motion.button
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/projects')}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors hidden sm:block flex-shrink-0"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600" />
           </motion.button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
-            <p className="text-sm text-slate-500">Manage tasks and track progress</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{project.name}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">
+              Manage tasks and track progress
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowAIPanel(!showAIPanel)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-md transition-all"
+            className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-md transition-all text-sm"
           >
             <Sparkles className="w-4 h-4" />
-            AI Assistant
+            <span className="hidden md:inline">AI Assistant</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowAIPanel(!showAIPanel)}
+            className="sm:hidden p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hover:shadow-md transition-all text-sm"
           >
             <Plus className="w-4 h-4" />
-            New Task
+            <span className="hidden sm:inline">New Column</span>
           </motion.button>
         </div>
       </motion.div>
 
-      <div className="flex-1 overflow-x-auto p-6">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
         <DragDropContext
           onDragStart={() => setIsDragging(true)}
           onDragEnd={(result) => {
@@ -241,25 +316,25 @@ export default function KanbanPage() {
             handleDragEnd(result);
           }}
         >
-          <div className="flex items-start gap-6 min-w-min h-full">
-            {columns && Object.values(columns).map((column) => (
-              <Droppable key={column.id} droppableId={column.id}>
-                {(provided, snapshot) => (
-                  // Pass provided and snapshot into KanbanColumn so the placeholder can be rendered
-                  <KanbanColumn
-                    column={column}
-                    isDraggingOver={snapshot.isDraggingOver}
-                    isDragging={isDragging}
-                    onAddTask={() => handleOpenCreateModal(column.id)}
-                    onEditTask={(task) => handleOpenEditModal(task)}
-                    onDeleteTask={handleDeleteTask}
-                    onRenameColumn={handleRenameColumn}
-                    droppableProvided={provided}
-                    droppableSnapshot={snapshot}
-                  />
-                )}
-              </Droppable>
-            ))}
+          <div className="flex items-start gap-3 sm:gap-6 min-w-min h-full pb-4">
+            {columns &&
+              Object.values(columns).map((column) => (
+                <Droppable key={column.id} droppableId={column.id}>
+                  {(provided, snapshot) => (
+                    <KanbanColumn
+                      column={column}
+                      isDraggingOver={snapshot.isDraggingOver}
+                      isDragging={isDragging}
+                      onAddTask={() => handleOpenCreateModal(column.id)}
+                      onEditTask={(task) => handleOpenEditModal(task)}
+                      onDeleteTask={handleDeleteTask}
+                      onRenameColumn={handleRenameColumn}
+                      droppableProvided={provided}
+                      droppableSnapshot={snapshot}
+                    />
+                  )}
+                </Droppable>
+              ))}
           </div>
         </DragDropContext>
       </div>

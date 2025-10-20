@@ -1,5 +1,4 @@
-// src/context/AppContext.jsx
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 const AppContext = createContext();
 
@@ -15,16 +14,17 @@ export const AppProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
+  // stable function to show toast
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
   const value = {
     projects,
     setProjects,
     toast,
     showToast,
+    setToast,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
