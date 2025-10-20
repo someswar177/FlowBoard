@@ -6,18 +6,22 @@
 
 This repository contains the backend API for FlowBoard, a project management application. It is a RESTful API built with Node.js, Express, and Mongoose for interacting with a MongoDB database. It includes a powerful integration with Google's Gemini AI to provide intelligent data analysis features.
 
+This API powers the **[FlowBoard React Frontend](https://flow-board-ivory.vercel.app/)**.
+
+**Live API Base URL:** **[https://flowboard-0syv.onrender.com/](https://flowboard-0syv.onrender.com/)**
+
 ---
 
 ## ✨ Features
 
-- **RESTful Architecture:** A well-structured API for managing projects and tasks.
-- **Full CRUD for Projects:** Endpoints to create, read, update, and delete projects. Also supports adding custom columns to a project's board.
-- **Full CRUD for Tasks:** Endpoints to create, read, update, and delete tasks within a project.
-- **Efficient Task Reordering:** A dedicated endpoint (`/tasks/update-order`) that uses `bulkWrite` to efficiently update the status and order of multiple tasks at once after a drag-and-drop operation.
+- [cite_start]**RESTful Architecture:** A well-structured API for managing projects and tasks[cite: 488, 490, 487].
+- [cite_start]**Full CRUD for Projects:** Endpoints to create, read, update, and delete projects[cite: 489]. [cite_start]Also supports adding custom columns to a project's board[cite: 451].
+- [cite_start]**Full CRUD for Tasks:** Endpoints to create, read, update, and delete tasks within a project[cite: 491, 492].
+- [cite_start]**Efficient Task Reordering:** A dedicated endpoint (`/tasks/update-order`) that uses `bulkWrite` to efficiently update the status and order of multiple tasks at once after a drag-and-drop operation[cite: 477, 478].
 - **Gemini AI Integration:**
-    - **Summarization Endpoint:** Analyzes all tasks in a project to generate a "Project Health Check" summary, identifying progress, bottlenecks, and next steps.
-    - **Q&A Endpoint:** Takes a user's question and project context to provide an intelligent, context-aware answer.
-- **Data Validation:** Uses Mongoose schemas to ensure data integrity.
+    - [cite_start]**Summarization Endpoint:** Analyzes all tasks in a project to generate a "Project Health Check" summary, identifying progress, bottlenecks, and next steps[cite: 394, 399, 403].
+    - [cite_start]**Q&A Endpoint:** Takes a user's question and project context to provide an intelligent, context-aware answer[cite: 411, 416, 420].
+- [cite_start]**Data Validation:** Uses Mongoose schemas to ensure data integrity[cite: 480, 484].
 
 ---
 
@@ -26,9 +30,9 @@ This repository contains the backend API for FlowBoard, a project management app
 - **Runtime:** Node.js
 - **Framework:** Express.js
 - **Database:** MongoDB with Mongoose ODM
-- **AI:** Google Gemini (`@google/genai`)
-- **Environment Variables:** `dotenv`
-- **CORS:** `cors`
+- [cite_start]**AI:** Google Gemini (`@google/genai`) [cite: 508]
+- [cite_start]**Environment Variables:** `dotenv` [cite: 508]
+- [cite_start]**CORS:** `cors` [cite: 508]
 
 ---
 
@@ -45,8 +49,8 @@ This repository contains the backend API for FlowBoard, a project management app
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/backend-repo-name.git](https://github.com/your-username/backend-repo-name.git)
-    cd backend-repo-name
+    git clone [https://github.com/someswar177/FlowBoard.git](https://github.com/someswar177/FlowBoard.git)
+    cd FlowBoard/server
     ```
 
 2.  **Install dependencies:**
@@ -55,7 +59,7 @@ This repository contains the backend API for FlowBoard, a project management app
     ```
 
 3.  **Set up environment variables:**
-    Create a file named `.env` in the root of the project and add the following configuration:
+    Create a file named `.env` in the root of the `/server` directory and add the following configuration:
     ```env
     # Your MongoDB connection string
     MONGODB_URL=mongodb+srv://<user>:<password>@<cluster-url>/<database-name>

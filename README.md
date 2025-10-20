@@ -7,10 +7,9 @@
 
 FlowBoard is a modern, full-stack project and task management system built with the MERN stack. It features an intuitive, Trello-like Kanban board interface with robust drag-and-drop functionality. The standout feature is the integration of Google's Gemini AI, which provides intelligent project summaries and an interactive Q&A assistant to enhance productivity.
 
-**Live Demo:** `[Link to your deployed application]`
+**Live Demo:** **[https://flow-board-ivory.vercel.app/](https://flow-board-ivory.vercel.app/)**
 
-
----
+![FlowBoard Kanban Page Screenshot](https://i.imgur.com/your-screenshot-url.png) ---
 
 ## ✨ Core Features
 
@@ -28,7 +27,7 @@ FlowBoard is a modern, full-stack project and task management system built with 
 
 ### 🤖 AI-Powered Assistant (Gemini Integration)
 - **AI Project Summary:** Generate a comprehensive "Project Health Check" with a single click. The AI analyzes task distribution, progress, and potential risks, then provides actionable next steps.
-- **AI Q&A Panel:** Open an interactive chat panel to ask questions about the current project (e.g., "What are the next steps?", "Which tasks are in progress?"). The AI provides concise, context-aware answers based on the project's data.
+- **AI Q&A Panel:** Open an interactive chat panel to ask questions about the current project. The AI provides concise, context-aware answers based on the project's data.
 
 ---
 
@@ -36,12 +35,12 @@ FlowBoard is a modern, full-stack project and task management system built with 
 
 | Category      | Technology                                                                                                                              |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| **Frontend** | [React.js](https://reactjs.org/) (with Vite), [React Router](https://reactrouter.com/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/), [Axios](https://axios-http.com/) |
-| **Backend** | [Node.js](https://nodejs.org/), [Express.js](https://expressjs.com/)                                                                     |
-| **Database** | [MongoDB](https://www.mongodb.com/) (with Mongoose)                                                                                     |
-| **AI** | [Google Gemini AI](https://ai.google.dev/)                                                                                             |
-| **Drag & Drop**| [@hello-pangea/dnd](https://github.com/hello-pangea/dnd)                                                                                 |
-| **UI Icons** | [Lucide React](https://lucide.dev/)                                                                                                     |
+| **Frontend** | React.js (with Vite), React Router, Tailwind CSS, Framer Motion, Axios |
+| **Backend** | Node.js, Express.js                                                                                                                    |
+| **Database** | MongoDB (with Mongoose)                                                                                                                  |
+| **AI** | Google Gemini AI |
+| **Drag & Drop**| @hello-pangea/dnd                                                                                                                |
+| **UI Icons** | Lucide React                                                                                                                   |
 
 ---
 
@@ -59,8 +58,8 @@ Follow these instructions to set up and run the project locally.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-cd your-repo-name
+git clone [https://github.com/someswar177/FlowBoard.git](https://github.com/someswar177/FlowBoard.git)
+cd FlowBoard
 ```
 
 ### 2. Backend Setup
@@ -97,9 +96,10 @@ npm install
 Create a `.env` file in the `client` directory and add the following variable:
 
 ```env
-# The base URL of your backend API
+# The base URL of your backend API for local development
 VITE_API_URL=http://localhost:5000/api
 ```
+*(The deployed version uses `https://flowboard-0syv.onrender.com/api`)*
 
 ### 4. Running the Application
 
