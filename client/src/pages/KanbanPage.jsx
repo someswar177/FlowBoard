@@ -300,9 +300,9 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleOpenCreateModal(Object.keys(COLUMN_CONFIG)[0])}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hover:shadow-md transition-all text-sm"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 sm:w-auto rounded-lg border-2 border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-sm sm:text-base font-medium justify-center sm:justify-start"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5"/>
             <span className="hidden sm:inline">New Column</span>
           </motion.button>
         </div>

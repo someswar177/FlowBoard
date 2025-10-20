@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Layers, X, PanelLeftClose } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+// 👇 1. Import `useLocation` instead of `useParams`
+import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 const PROJECT_COLORS = [
@@ -16,7 +17,15 @@ const PROJECT_COLORS = [
 
 export default function Sidebar({ onNewProject, isOpen, onToggle }) {
   const { projects } = useApp();
-  const { projectId: selectedProjectId } = useParams();
+  // 👇 2. Use `useLocation` to get the current URL path
+  const location = useLocation();
+
+  // 👇 3. Extract the project ID from the URL path
+  // For a URL like "/projects/xyz123", this code will get "xyz123"
+  const pathParts = location.pathname.split('/');
+  const selectedProjectId = pathParts.length === 3 && pathParts[1] === 'projects' 
+    ? pathParts[2] 
+    : null;
 
   return (
     <AnimatePresence>
@@ -38,8 +47,8 @@ export default function Sidebar({ onNewProject, isOpen, onToggle }) {
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="w-72 bg-white border-r border-slate-200 flex flex-col shadow-lg fixed inset-y-0 left-0 z-40"          
-            >
+            className="w-72 bg-white border-r border-slate-200 flex flex-col shadow-lg fixed inset-y-0 left-0 z-40"
+          >
             <div className="p-6 border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <Link to="/projects">
@@ -72,15 +81,17 @@ export default function Sidebar({ onNewProject, isOpen, onToggle }) {
                   ) : (
                     projects.map((project, index) => {
                       const dotColor = PROJECT_COLORS[index % PROJECT_COLORS.length];
-                      const name = String(project?.name ?? 'Untitled'); // defensive
+                      const name = String(project?.name ?? 'Untitled');
                       return (
                         <Link to={`/projects/${project._id}`} key={project._id}>
                           <motion.div
                             whileHover={{ x: 2 }}
-                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${selectedProjectId === project._id
+                            // 👇 4. This comparison will now work correctly!
+                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${
+                              selectedProjectId === project._id
                                 ? 'bg-blue-50 text-blue-700 shadow-sm'
                                 : 'text-slate-700 hover:bg-slate-50'
-                              }`}
+                            }`}
                           >
                             <div className="flex items-center gap-3">
                               <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`}></div>
