@@ -6,21 +6,29 @@ import {
   CircleDashed,
   CircleDot,
   CheckCircle2,
+  Edit3,
+  Check,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ColumnSummarizer from '../ai/ColumnSummarizer';
 
 export default function KanbanColumn({
+  projectId,
   column,
   isDraggingOver,
   isDragging,
   onAddTask,
   onEditTask,
   onDeleteTask,
+  onRenameColumn,
   droppableProvided,
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newColumnName, setNewColumnName] = useState(column.title);
+  const renameInputRef = useRef(null);
+
   const colorMap = {
     'To Do': 'bg-blue-50/80 border-blue-200',
     'In Progress': 'bg-amber-50/80 border-amber-200',
@@ -43,6 +51,27 @@ export default function KanbanColumn({
   };
   const IconComponent = statusIconMap[column.id];
 
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleRenameSubmit = () => {
+    const trimmedName = newColumnName.trim();
+    if (trimmedName && trimmedName !== column.title) {
+      onRenameColumn(column.id, trimmedName);
+    }
+    setIsRenaming(false);
+    setNewColumnName(column.title);
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenaming(false);
+    setNewColumnName(column.title);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -53,31 +82,71 @@ export default function KanbanColumn({
     >
       <div className="p-3 sm:p-4 border-b border-slate-200/60">
         <div className="flex items-center justify-between mb-3">
-          <div
-            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-white font-semibold text-xs sm:text-sm ${
-              headerBadgeColorMap[column.id] || 'bg-slate-500'
-            }`}
-          >
-            {IconComponent && <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3.2} />}
-            <span>{column.title.toUpperCase()}</span>
-          </div>
-
-          <div className="flex items-center gap-1 relative">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowSummarizer(!showSummarizer)}
-              className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
-              title="Summarize with AI"
+          {isRenaming ? (
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                ref={renameInputRef}
+                type="text"
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRenameSubmit();
+                  if (e.key === 'Escape') handleRenameCancel();
+                }}
+                onBlur={handleRenameCancel}
+                className="flex-1 px-2 py-1 text-xs sm:text-sm font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleRenameSubmit();
+                }}
+                className="p-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </motion.button>
+            </div>
+          ) : (
+            <div
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-white font-semibold text-xs sm:text-sm ${
+                headerBadgeColorMap[column.id] || 'bg-slate-500'
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </motion.button>
-          </div>
+              {IconComponent && <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3.2} />}
+              <span>{column.title.toUpperCase()}</span>
+            </div>
+          )}
+
+          {!isRenaming && (
+            <div className="flex items-center gap-1 relative">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsRenaming(true)}
+                className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
+                title="Rename Column"
+              >
+                <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowSummarizer(!showSummarizer)}
+                className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-blue-600"
+                title="Get AI Project Summary"
+              >
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </motion.button>
+            </div>
+          )}
         </div>
 
         <span
           className={`inline-flex items-center px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold ${
-            badgeColorMap[column.id] || 'bg-slate-100 text-slate-700'
+            badgeColorMap[column.id] ||
+            'bg-slate-100 text-slate-700'
           }`}
         >
           {column.tasks.length} {column.tasks.length === 1 ? 'task' : 'tasks'}
@@ -147,8 +216,7 @@ export default function KanbanColumn({
 
       {showSummarizer && (
         <ColumnSummarizer
-          columnTitle={column.title}
-          tasks={column.tasks}
+          projectId={projectId}
           onClose={() => setShowSummarizer(false)}
         />
       )}

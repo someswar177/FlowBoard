@@ -1,24 +1,57 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <-- Import useEffect
 import { aiService } from '../../api/aiService';
+import { marked } from 'marked';
 
-export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
+export default function ColumnSummarizer({ projectId, onClose }) {
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  // --- FIX START ---
+  // 1. State to hold the dynamic loading message
+  const [loadingMessage, setLoadingMessage] = useState('Connecting to AI...');
+  // --- FIX END ---
+
+  // --- FIX START ---
+  // 2. useEffect to cycle through loading messages
+  useEffect(() => {
+    let timeouts = [];
+    if (isLoading) {
+      const messages = [
+        'Analyzing tasks...',
+        'Identifying risks...',
+        'Checking for bottlenecks...',
+        'Crafting your summary...',
+      ];
+      let i = 0;
+      setLoadingMessage('Connecting to AI...'); // Reset to initial message
+
+      // Function to update message
+      const updateMessage = () => {
+        if (i < messages.length) {
+          setLoadingMessage(messages[i]);
+          i++;
+          timeouts.push(setTimeout(updateMessage, 2000)); // Change every 2 seconds
+        }
+      };
+      
+      timeouts.push(setTimeout(updateMessage, 1500)); // Start after 1.5 seconds
+    }
+
+    // 3. Cleanup function to clear timeouts if component unmounts or loading stops
+    return () => {
+      timeouts.forEach(clearTimeout);
+    };
+  }, [isLoading]);
+  // --- FIX END ---
 
   const handleSummarize = async () => {
     setIsLoading(true);
     setError(null);
     setSummary(null);
     try {
-      const projectData = {
-        name: `Tasks in "${columnTitle}" column`,
-        description: `This is a summary for the tasks currently in the "${columnTitle}" status.`,
-        tasks: tasks.map((t) => ({ title: t.title, description: t.description, status: t.status })),
-      };
-      const result = await aiService.summarizeProject(projectData);
+      const result = await aiService.summarizeProject(projectId);
       setSummary(result.summary);
     } catch (err) {
       setError('Failed to generate summary. Please try again.');
@@ -41,7 +74,7 @@ export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h3 className="font-bold text-sm text-slate-900">AI Summary</h3>
+            <h3 className="font-bold text-sm text-slate-900">AI Project Summary</h3>
           </div>
           <motion.button
             whileHover={{ rotate: 90, scale: 1.1 }}
@@ -69,16 +102,22 @@ export default function ColumnSummarizer({ columnTitle, tasks, onClose }) {
                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                 />
-                Summarizing...
+                {/* --- FIX START --- */}
+                {/* 4. Display the dynamic loading message */}
+                {loadingMessage}
+                {/* --- FIX END --- */}
               </div>
             ) : (
-              `Summarize "${columnTitle}"`
+              `Summarize Project`
             )}
           </motion.button>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{summary}</p>
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-60 overflow-y-auto">
+              <div
+                className="text-sm text-slate-700 leading-relaxed space-y-2 prose prose-sm"
+                dangerouslySetInnerHTML={{ __html: marked.parse(summary) }}
+              />
             </div>
             <motion.button
               whileHover={{ scale: 1.01 }}
