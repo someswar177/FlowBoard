@@ -31,6 +31,8 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   const [taskToDelete, setTaskToDelete] = useState(null);
 
 
+  // src/pages/KanbanPage.jsx
+
   const fetchProjectData = useCallback(async () => {
     try {
       if (!projectId) return;
@@ -46,9 +48,13 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
       const tasks = fetchedProject.tasks || [];
       const initialColumns = {};
 
-      const defaultColumns = ["To Do", "In Progress", "Done"];
-      const customColumns = fetchedProject.columnOrder || [];
-      const columnOrder = [...new Set([...defaultColumns, ...customColumns])];
+      // --- THIS IS THE FIX ---
+      // We trust the columnOrder from the database.
+      // We ONLY use the defaults if the project's columnOrder is empty (e.g., a brand new project).
+      const columnOrder = (fetchedProject.columnOrder && fetchedProject.columnOrder.length > 0)
+        ? fetchedProject.columnOrder
+        : ["To Do", "In Progress", "Done"];
+      // --- END OF FIX ---
 
       columnOrder.forEach((columnName) => {
         initialColumns[columnName] = {

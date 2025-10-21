@@ -49,7 +49,7 @@ export default function KanbanColumn({
     'In Progress': CircleDot,
     'Done': CheckCircle2,
   };
-  const IconComponent = statusIconMap[column.id];
+  const IconComponent = statusIconMap[column.id] || CircleDashed;
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -156,7 +156,8 @@ export default function KanbanColumn({
         className={`p-2 sm:p-3 space-y-2 sm:space-y-2.5 transition-[height] duration-200 ease-in-out ${
           column.tasks.length > 3 ? 'overflow-y-auto' : 'overflow-visible'
         } ${isDraggingOver && column.tasks.length > 3 ? 'pb-24' : ''} ${
-          isDragging && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''
+          /* --- THIS IS THE FIX --- */
+          isDraggingOver && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''
         }`}
       >
         {column.tasks.map((task, index) => (
