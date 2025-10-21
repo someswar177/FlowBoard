@@ -30,8 +30,7 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
 
-
-  // src/pages/KanbanPage.jsx
+  const [columnToDelete, setColumnToDelete] = useState(null);
 
   const fetchProjectData = useCallback(async () => {
     try {
@@ -48,13 +47,9 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
       const tasks = fetchedProject.tasks || [];
       const initialColumns = {};
 
-      // --- THIS IS THE FIX ---
-      // We trust the columnOrder from the database.
-      // We ONLY use the defaults if the project's columnOrder is empty (e.g., a brand new project).
       const columnOrder = (fetchedProject.columnOrder && fetchedProject.columnOrder.length > 0)
         ? fetchedProject.columnOrder
         : ["To Do", "In Progress", "Done"];
-      // --- END OF FIX ---
 
       columnOrder.forEach((columnName) => {
         initialColumns[columnName] = {
@@ -88,20 +83,37 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
   }, [fetchProjectData]);
 
   const handleRenameColumn = async (columnId, newTitle) => {
-    console.log(columnId,newTitle)
-
     try {
       await projectService.update(projectId, { 
         oldName: columnId, 
         newName: newTitle 
       });
       showToast('Column renamed successfully!', 'success');
-      
       await fetchProjectData(); 
-
     } catch (error) {
       showToast(`Failed to rename column: ${error.message}`, 'error');
     }
+  };
+
+  const handleDeleteColumn = (columnId) => {
+    setColumnToDelete(columnId);
+  };
+
+  const confirmDeleteColumn = async () => {
+    if (!columnToDelete) return;
+    try {
+      await projectService.deleteColumn(projectId, columnToDelete);
+      showToast('Column deleted successfully!');
+      await fetchProjectData();
+    } catch (error) {
+      showToast(`Failed to delete column: ${error.message}`, 'error');
+    } finally {
+      setColumnToDelete(null);
+    }
+  };
+
+  const cancelDeleteColumn = () => {
+    setColumnToDelete(null);
   };
 
   const handleDragEnd = async (result) => {
@@ -362,6 +374,7 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
                       onEditTask={(task) => handleOpenEditModal(task)}
                       onDeleteTask={handleDeleteTask}
                       onRenameColumn={handleRenameColumn}
+                      onDeleteColumn={handleDeleteColumn}
                       droppableProvided={provided}
                     />
                   )}
@@ -386,11 +399,10 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsAddingColumn(true)}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 sm:w-auto rounded-lg border-2 border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-sm sm:text-base font-medium justify-center sm:justify-start"
+                    onClick={handleAddNewColumn}
+                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all text-sm"
                   >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Add Column</span>
+                    Add Column
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -421,6 +433,15 @@ export default function KanbanPage({ onToggleSidebar, isSidebarOpen }) {
             setShowConfirmModal(false);
             setTaskToDelete(null);
           }}
+        />
+      )}
+
+      {columnToDelete && (
+        <ConfirmModal
+          title="Delete Column"
+          message={`Are you sure you want to delete the "${columnToDelete}" column? All tasks within it will be permanently deleted. This action cannot be undone.`}
+          onConfirm={confirmDeleteColumn}
+          onCancel={cancelDeleteColumn}
         />
       )}
     </div>

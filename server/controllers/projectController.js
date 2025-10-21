@@ -144,3 +144,31 @@ export const addColumn = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const deleteColumn = async (req, res) => {
+  try {
+    const { id: projectId } = req.params;
+    const { columnName } = req.body;
+
+    const defaultColumns = ["To Do", "In Progress", "Done"];
+    if (defaultColumns.includes(columnName)) {
+      return res.status(400).json({ message: "Cannot delete a default column." });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    await Task.deleteMany({ projectId: projectId, status: columnName });
+
+    const newColumnOrder = project.columnOrder.filter(col => col !== columnName);
+    project.columnOrder = newColumnOrder;
+    project.markModified('columnOrder');
+    await project.save();
+
+    res.status(200).json({ message: "Column and associated tasks deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Edit3,
   Check,
+  Trash2
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useState, useRef, useEffect } from 'react';
@@ -22,6 +23,7 @@ export default function KanbanColumn({
   onEditTask,
   onDeleteTask,
   onRenameColumn,
+  onDeleteColumn,
   droppableProvided,
 }) {
   const [showSummarizer, setShowSummarizer] = useState(false);
@@ -50,6 +52,8 @@ export default function KanbanColumn({
     'Done': CheckCircle2,
   };
   const IconComponent = statusIconMap[column.id] || CircleDashed;
+
+  const isDefaultColumn = ['To Do', 'In Progress', 'Done'].includes(column.id);
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -138,6 +142,20 @@ export default function KanbanColumn({
               >
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteColumn(column.id);
+                }}
+                hidden={isDefaultColumn}
+                className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-slate-600 hover:text-red-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                title={isDefaultColumn ? "Default columns cannot be deleted" : "Delete column"}
+              >
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </motion.button>              
             </div>
           )}
         </div>
@@ -156,7 +174,6 @@ export default function KanbanColumn({
         className={`p-2 sm:p-3 space-y-2 sm:space-y-2.5 transition-[height] duration-200 ease-in-out ${
           column.tasks.length > 3 ? 'overflow-y-auto' : 'overflow-visible'
         } ${isDraggingOver && column.tasks.length > 3 ? 'pb-24' : ''} ${
-          /* --- THIS IS THE FIX --- */
           isDraggingOver && column.tasks.length === 0 ? 'min-h-[4.5rem]' : ''
         }`}
       >

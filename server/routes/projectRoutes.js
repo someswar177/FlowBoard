@@ -5,7 +5,8 @@ import {
     getProjectById, 
     updateProject, 
     deleteProject, 
-    addColumn 
+    addColumn,
+    deleteColumn
 } from "../controllers/projectController.js";
 
 const router = express.Router();
@@ -13,6 +14,6 @@ const router = express.Router();
 router.route("/").get(getProjects).post(createProject);
 router.route("/:id").get(getProjectById).put(updateProject).delete(deleteProject);
 
-router.route("/:id/columns").post(addColumn);
+router.route("/:id/columns").post(addColumn).delete(deleteColumn);
 
 export default router;

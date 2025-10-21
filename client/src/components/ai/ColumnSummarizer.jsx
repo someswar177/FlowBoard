@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react'; // 1. useRef is imported
+import { useState, useEffect, useRef } from 'react';
 import { aiService } from '../../api/aiService';
 import { marked } from 'marked';
 
@@ -9,26 +9,20 @@ export default function ColumnSummarizer({ projectId, columnName, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('Connecting to AI...');
-  const summarizerRef = useRef(null); // 2. Create a ref for the component's wrapper
+  const summarizerRef = useRef(null);
 
-  // --- NEW: Logic to handle clicking outside the component ---
   useEffect(() => {
     function handleClickOutside(event) {
-      // If the ref is attached and the click is outside the ref's element
       if (summarizerRef.current && !summarizerRef.current.contains(event.target)) {
-        onClose(); // Trigger the close function from the parent
+        onClose();
       }
     }
-    // Add the event listener to the whole document
     document.addEventListener("mousedown", handleClickOutside);
-    // Cleanup: remove the event listener when the component unmounts
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onClose]); // The hook depends on the onClose function
-  // --- END OF NEW LOGIC ---
+  }, [onClose]);
 
-  // This useEffect for loading messages remains unchanged
   useEffect(() => {
     let timeouts = [];
     if (isLoading) {
@@ -71,7 +65,7 @@ export default function ColumnSummarizer({ projectId, columnName, onClose }) {
   return (
     <AnimatePresence>
       <motion.div
-        ref={summarizerRef} // 3. Attach the ref to the main div
+        ref={summarizerRef}
         initial={{ opacity: 0, scale: 0.95, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -10 }}
