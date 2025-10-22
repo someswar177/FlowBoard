@@ -1,26 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { AppProvider, useApp } from './context/AppContext';
+
 import Sidebar from './components/layout/Sidebar';
 import ProjectsPage from './pages/ProjectsPage';
 import KanbanPage from './pages/KanbanPage';
-import { AppProvider, useApp } from './context/AppContext';
 import ProjectModal from './components/modals/ProjectModal';
-import { projectService } from './api/projectService';
 import Toast from './components/ui/Toast';
+import { useProjects } from './hooks/useProjects';
 
 function AppContent() {
-  const { projects, setProjects, showToast, toast, setToast } = useApp();
-  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    return typeof window !== 'undefined' && window.innerWidth >= 1024;
-  });
-  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-
-  const [isDesktop, setIsDesktop] = useState(() => {
-    return typeof window !== 'undefined' && window.innerWidth >= 1024;
-  });
+  const { toast, setToast } = useApp();
+  const {
+    isLoading,
+    isModalOpen,
+    editingProject,
+    openProjectModal,
+    closeProjectModal,
+    saveProject,
+    deleteProject,
+  } = useProjects();
+  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
 
   useEffect(() => {
     const handleResize = () => {
@@ -30,77 +33,25 @@ function AppContent() {
         setIsDesktop(isLargeScreen);
       }
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isDesktop]);
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setIsLoadingProjects(true);
-        const fetchedProjects = await projectService.getAll(true);
-        setProjects(fetchedProjects);
-      } catch (error) {
-        showToast(`Failed to load projects: ${error.message}`, 'error');
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, [setProjects, showToast]);
-
-  const handleOpenProjectModal = (project = null) => {
-    setEditingProject(project);
-    setIsProjectModalOpen(true);
-  };
-
-  const handleCloseProjectModal = () => {
-    setIsProjectModalOpen(false);
-    setEditingProject(null);
-  };
-
-  const handleSaveProject = async (formData) => {
-    try {
-      if (editingProject) {
-        const updatedProject = await projectService.update(editingProject._id, formData);
-        setProjects(projects.map((p) => (p._id === editingProject._id ? updatedProject : p)));
-        showToast('Project updated successfully!');
-      } else {
-        const newProject = await projectService.create(formData);
-        setProjects([newProject, ...projects]);
-        showToast('Project created successfully!');
-      }
-    } catch (error) {
-      showToast(`Error: ${error.message}`, 'error');
-    } finally {
-      handleCloseProjectModal();
-    }
-  };
-
-  const handleToastClose = () => {
-    setToast(null);
-  };
-
   const mainVariants = {
-    open: {
-      marginLeft: isDesktop ? '288px' : '0px',
-    },
-    closed: {
-      marginLeft: '0px',
-    },
+    open: { marginLeft: isDesktop ? '288px' : '0px' },
+    closed: { marginLeft: '0px' },
   };
 
   return (
     <>
-      <div className="relative h-screen bg-gray-100 text-foreground overflow-hidden">
+      <div className="relative h-screen bg-gray-100 overflow-hidden">
         <Sidebar
-          onNewProject={() => handleOpenProjectModal()}
+          onNewProject={() => openProjectModal()}
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />
         <motion.main
-          className="flex-1 h-full"
+          className="h-full"
           variants={mainVariants}
           animate={isSidebarOpen ? 'open' : 'closed'}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
@@ -111,11 +62,12 @@ function AppContent() {
               path="/projects"
               element={
                 <ProjectsPage
-                  onEditProject={handleOpenProjectModal}
-                  onNewProject={() => handleOpenProjectModal()}
+                  onEditProject={openProjectModal}
+                  onNewProject={() => openProjectModal()}
+                  onDeleteProject={deleteProject}
                   onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                   isSidebarOpen={isSidebarOpen}
-                  isLoading={isLoadingProjects}
+                  isLoading={isLoading}
                 />
               }
             />
@@ -133,32 +85,30 @@ function AppContent() {
         </motion.main>
       </div>
 
-      {isProjectModalOpen && (
+      {isModalOpen && (
         <ProjectModal
           project={editingProject}
-          onClose={handleCloseProjectModal}
-          onSave={handleSaveProject}
+          onClose={closeProjectModal}
+          onSave={saveProject}
         />
       )}
-
+      
       {toast && (
         <Toast
-          key={toast.message + (toast.type || '')}
+          key={Date.now()}
           message={toast.message}
           type={toast.type}
-          onClose={handleToastClose}
+          onClose={() => setToast(null)}
         />
       )}
     </>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <AppProvider>
       <AppContent />
     </AppProvider>
   );
 }
-
-export default App;
